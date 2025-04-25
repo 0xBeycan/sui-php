@@ -1,6 +1,6 @@
 {
-    "name": "sui/sdk",
     "version": "0.1.0",
+    "name": "sui-php/sdk",
     "description": "SUI PHP SDK",
     "type": "library",
     "license": "MIT",
