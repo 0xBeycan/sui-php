@@ -23,11 +23,11 @@ class CoinStruct
      */
     public function __construct(array $data)
     {
-        $this->balance = (string) $data['balance'];
-        $this->coinObjectId = (string) $data['coinObjectId'];
-        $this->coinType = (string) $data['coinType'];
-        $this->digest = (string) $data['digest'];
-        $this->previousTransaction = (string) $data['previousTransaction'];
-        $this->version = (string) $data['version'];
+        $this->balance = $data['balance'];
+        $this->coinObjectId = $data['coinObjectId'];
+        $this->coinType = $data['coinType'];
+        $this->digest = $data['digest'];
+        $this->previousTransaction = $data['previousTransaction'];
+        $this->version = $data['version'];
     }
 }

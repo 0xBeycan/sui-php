@@ -74,8 +74,7 @@ class ClientTest extends TestCase
     public function testGetAllBalances(): void
     {
         $response = $this->client->getAllBalances($this->balanceAddress);
-        $this->assertIsArray($response);
-        $this->assertEquals($response[0]->coinType, Constants::SUI_TYPE_ARG);
+        $this->assertEquals(count($response), 2);
     }
 
     /**
@@ -111,5 +110,25 @@ class ClientTest extends TestCase
 
         $this->assertIsArray($response->data);
         $this->assertEquals($response->data[0]->coinType, Constants::SUI_TYPE_ARG);
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetCoinMetadata(): void
+    {
+        $response = $this->client->getCoinMetadata($this->tokenType);
+        $this->assertEquals($response->decimals, 6);
+        $this->assertEquals($response->symbol, 'TUSDC');
+        $this->assertEquals($response->name, 'Test USDC');
+    }
+
+    /**
+     * @return void
+     */
+    public function testTotalSupply(): void
+    {
+        $response = $this->client->getTotalSupply($this->tokenType);
+        $this->assertEquals($response, (string) 100000000 * 10 ** 6);
     }
 }

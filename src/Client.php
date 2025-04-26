@@ -6,6 +6,7 @@ namespace Sui;
 
 use Exception;
 use Sui\Constants;
+use Sui\Type\CoinMetadata;
 use Sui\Response\CoinsResponse;
 use Sui\Response\ObjectResponse;
 use Sui\Response\BalanceResponse;
@@ -147,5 +148,23 @@ class Client
             $filter['cursor'] ?? null,
             $filter['limit'] ?? 10,
         ]));
+    }
+
+    /**
+     * @param string $coinType
+     * @return CoinMetadata|null
+     */
+    public function getCoinMetadata(string $coinType): ?CoinMetadata
+    {
+        return new CoinMetadata($this->request('suix_getCoinMetadata', [$coinType]));
+    }
+
+    /**
+     * @param string $coinType
+     * @return string
+     */
+    public function getTotalSupply(string $coinType): string
+    {
+        return $this->request('suix_getTotalSupply', [$coinType])['value'] ?? '0';
     }
 }
