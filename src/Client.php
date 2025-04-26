@@ -60,9 +60,9 @@ class Client
             throw new Exception('Request failed with status code: ' . $statusCode);
         }
 
-        $responseBody = (string) $response->getBody();
+        $responseBody = json_decode((string) $response->getBody(), true);
 
-        return json_decode($responseBody, true)['result'] ?: $responseBody;
+        return $responseBody['result']['data'] ?? $responseBody['result'] ?? $responseBody;
     }
 
     /**
@@ -74,7 +74,6 @@ class Client
         'showType' => true,
     ]): ObjectResponse
     {
-        $response = $this->request('sui_getObject', null, [$objectId, $options]);
-        return ObjectResponse::fromArray($response['data']);
+        return ObjectResponse::fromArray($this->request('sui_getObject', null, [$objectId, $options]));
     }
 }
