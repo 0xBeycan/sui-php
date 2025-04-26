@@ -43,4 +43,13 @@ class ClientTest extends TestCase
         $this->assertInstanceOf(ObjectResponse::class, $response);
         $this->assertEquals($type, $response->type);
     }
+
+    public function testGetBalance(): void
+    {
+        $response = $this->client->getBalance([
+            'owner' => '0xd4a5e15e39bed8eb14a87459e2cb43fcec3c0653002e5a9c31320ba8964b6052',
+        ]);
+
+        $this->assertEquals($response->totalBalance, 100 * 10 ** 9);
+    }
 }

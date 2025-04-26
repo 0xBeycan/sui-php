@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace SuiPHP;
+namespace Sui;
 
 class Constants
 {

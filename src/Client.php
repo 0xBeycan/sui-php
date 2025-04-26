@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Sui;
 
 use Exception;
+use Sui\Constants;
 use Sui\Response\ObjectResponse;
+use Sui\Response\BalanceResponse;
 use GuzzleHttp\Client as GuzzleClient;
 
 class Client
@@ -38,18 +40,17 @@ class Client
      * Sends a JSON-RPC request to the Sui server.
      *
      * @param string $method The JSON-RPC method to call.
-     * @param mixed $id The ID of the request (optional).
      * @param array<mixed> $params The parameters for the method (optional).
      * @return mixed The response from the server.
      * @throws Exception If the request fails or the response is not valid.
      */
-    public function request(string $method, mixed $id = null, array $params = []): mixed
+    public function request(string $method, array $params = []): mixed
     {
         $payload = [
             'jsonrpc' => '2.0',
             'method' => $method,
             'params' => $params,
-            'id' => $id ?: uniqid(),
+            'id' => uniqid(),
         ];
 
         $response = $this->client->request('POST', $this->url, ['json' => $payload]);
@@ -74,6 +75,22 @@ class Client
         'showType' => true,
     ]): ObjectResponse
     {
-        return ObjectResponse::fromArray($this->request('sui_getObject', null, [$objectId, $options]));
+        return ObjectResponse::fromArray($this->request('sui_getObject', [$objectId, $options]));
+    }
+
+    /**
+     * @param array<mixed> $filter
+     * @return BalanceResponse
+     */
+    public function getBalance(array $filter): BalanceResponse
+    {
+        if (empty($filter['owner'])) {
+            throw new Exception('Owner is required in the filter.');
+        }
+
+        return BalanceResponse::fromArray($this->request('suix_getBalance', [
+            $filter['owner'],
+            $filter['coinType'] ?? Constants::SUI_TYPE_ARG
+        ]));
     }
 }
