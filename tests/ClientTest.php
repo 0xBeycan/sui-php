@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sui\Tests;
 
 use Sui\Client;
+use Sui\Constants;
 use PHPUnit\Framework\TestCase;
 use Sui\Response\ObjectResponse;
 
@@ -63,11 +64,18 @@ class ClientTest extends TestCase
      */
     public function testGetBalance(): void
     {
-        $response = $this->client->getBalance([
-            'owner' => $this->balanceAddress,
-        ]);
-
+        $response = $this->client->getBalance($this->balanceAddress);
         $this->assertEquals($response->totalBalance, 100 * 10 ** 9);
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetAllBalances(): void
+    {
+        $response = $this->client->getAllBalances($this->balanceAddress);
+        $this->assertIsArray($response);
+        $this->assertEquals($response[0]->coinType, Constants::SUI_TYPE_ARG);
     }
 
     /**
@@ -90,5 +98,18 @@ class ClientTest extends TestCase
 
         $this->assertIsArray($response->data);
         $this->assertEquals($response->data[0]->coinType, $this->tokenType);
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetAllCoins(): void
+    {
+        $response = $this->client->getAllCoins([
+            'owner' => $this->balanceAddress,
+        ]);
+
+        $this->assertIsArray($response->data);
+        $this->assertEquals($response->data[0]->coinType, Constants::SUI_TYPE_ARG);
     }
 }

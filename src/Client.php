@@ -80,27 +80,38 @@ class Client
      * @param array<mixed> $options
      * @return ObjectResponse
      */
-    public function getObject(string $objectId, array $options = [
-        'showType' => true,
-    ]): ObjectResponse
+    public function getObject(string $objectId, array $options = []): ObjectResponse
     {
         return ObjectResponse::fromArray($this->request('sui_getObject', [$objectId, $options])['data'] ?? []);
     }
 
     /**
-     * @param array<mixed> $filter
+     * @param string $owner
+     * @param string|null $coinType
      * @return BalanceResponse
      */
-    public function getBalance(array $filter): BalanceResponse
+    public function getBalance(string $owner, ?string $coinType = null): BalanceResponse
     {
-        if (empty($filter['owner'])) {
-            throw new Exception('Owner is required in the filter.');
-        }
-
         return BalanceResponse::fromArray($this->request('suix_getBalance', [
-            $filter['owner'],
-            $filter['coinType'] ?? Constants::SUI_TYPE_ARG
+            $owner,
+            $coinType ?? Constants::SUI_TYPE_ARG,
         ]));
+    }
+
+    /**
+     * @param string $owner
+     * @return Array<BalanceResponse<
+     */
+    public function getAllBalances(string $owner): array
+    {
+        $result = $this->request('suix_getAllBalances', [
+            $owner,
+        ]);
+
+        return array_map(
+            static fn(array $item) => BalanceResponse::fromArray($item),
+            $result ?? []
+        );
     }
 
     /**
@@ -116,6 +127,23 @@ class Client
         return CoinsResponse::fromArray($this->request('suix_getCoins', [
             $filter['owner'],
             $filter['coinType'] ?? Constants::SUI_TYPE_ARG,
+            $filter['cursor'] ?? null,
+            $filter['limit'] ?? 10,
+        ]));
+    }
+
+    /**
+     * @param array<mixed> $filter
+     * @return CoinsResponse
+     */
+    public function getAllCoins(array $filter): CoinsResponse
+    {
+        if (empty($filter['owner'])) {
+            throw new Exception('Owner is required in the filter.');
+        }
+
+        return CoinsResponse::fromArray($this->request('suix_getAllCoins', [
+            $filter['owner'],
             $filter['cursor'] ?? null,
             $filter['limit'] ?? 10,
         ]));
