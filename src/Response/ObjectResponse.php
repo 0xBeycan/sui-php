@@ -4,26 +4,18 @@ declare(strict_types=1);
 
 namespace Sui\Response;
 
-use Sui\Type\ObjectOwner;
-use Sui\Type\ObjectContent;
+use Sui\Type\SuiObject;
 
 class ObjectResponse
 {
-    public ?string $type;
+    /**
+     * @var array<SuiObject>
+     */
+    public array $data;
 
-    public string $digest;
+    public bool $hasNextPage;
 
-    public string $version;
-
-    public string $objectId;
-
-    public ?string $storageRebate;
-
-    public ?ObjectOwner $owner;
-
-    public ?ObjectContent $content;
-
-    public ?string $previousTransaction;
+    public ?string $nextCursor;
 
     /**
      * @param array<mixed> $data
@@ -33,14 +25,13 @@ class ObjectResponse
     {
         $instance = new self();
 
-        $instance->type = $data['type'] ?? null;
-        $instance->digest = $data['digest'];
-        $instance->version = $data['version'];
-        $instance->objectId = $data['objectId'];
-        $instance->storageRebate = $data['storageRebate'] ?? null;
-        $instance->owner = isset($data['owner']) ? new ObjectOwner($data['owner']) : null;
-        $instance->content = isset($data['content']) ? new ObjectContent($data['content']) : null;
-        $instance->previousTransaction = $data['previousTransaction'] ?? null;
+        $instance->data = array_map(
+            static fn(array $item) => new SuiObject($item['data']),
+            $data['data'] ?? []
+        );
+
+        $instance->nextCursor = $data['nextCursor'] ?? null;
+        $instance->hasNextPage = (bool) ($data['hasNextPage'] ?? false);
 
         return $instance;
     }

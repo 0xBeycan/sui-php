@@ -6,6 +6,7 @@ namespace Sui;
 
 use Exception;
 use Sui\Constants;
+use Sui\Type\SuiObject;
 use Sui\Type\CoinMetadata;
 use Sui\Response\CoinsResponse;
 use Sui\Response\ObjectResponse;
@@ -65,7 +66,13 @@ class Client
 
         $responseBody = json_decode((string) $response->getBody(), true);
 
-        return $responseBody['result'] ?? $responseBody;
+        $result = $responseBody['result'] ?? $responseBody;
+
+        if (isset($result['error'])) {
+            throw new Exception('Error: ' . $result['error']['message'] ?? 'Unknown error', $result['error']['code'] ?? 0);
+        }
+
+        return $result;
     }
 
     /**
@@ -74,16 +81,6 @@ class Client
     public function getRpcApiVersion(): ?string
     {
         return $this->request('rpc.discover')['info']['version'] ?? null;
-    }
-
-    /**
-     * @param string $objectId
-     * @param array<mixed> $options
-     * @return ObjectResponse
-     */
-    public function getObject(string $objectId, array $options = []): ObjectResponse
-    {
-        return ObjectResponse::fromArray($this->request('sui_getObject', [$objectId, $options])['data'] ?? []);
     }
 
     /**
@@ -101,7 +98,7 @@ class Client
 
     /**
      * @param string $owner
-     * @return Array<BalanceResponse<
+     * @return array<BalanceResponse>
      */
     public function getAllBalances(string $owner): array
     {
@@ -116,37 +113,34 @@ class Client
     }
 
     /**
-     * @param array<mixed> $filter
+     * @param string $owner
+     * @param string|null $coinType
+     * @param string|null $cursor
+     * @param int $limit
      * @return CoinsResponse
      */
-    public function getCoins(array $filter): CoinsResponse
+    public function getCoins(string $owner, ?string $coinType = null, ?string $cursor = null, int $limit = 10): CoinsResponse
     {
-        if (empty($filter['owner'])) {
-            throw new Exception('Owner is required in the filter.');
-        }
-
         return CoinsResponse::fromArray($this->request('suix_getCoins', [
-            $filter['owner'],
-            $filter['coinType'] ?? Constants::SUI_TYPE_ARG,
-            $filter['cursor'] ?? null,
-            $filter['limit'] ?? 10,
+            $owner,
+            $coinType ?? Constants::SUI_TYPE_ARG,
+            $cursor,
+            $limit,
         ]));
     }
 
     /**
-     * @param array<mixed> $filter
+     * @param string $owner
+     * @param string|null $cursor
+     * @param int $limit
      * @return CoinsResponse
      */
-    public function getAllCoins(array $filter): CoinsResponse
+    public function getAllCoins(string $owner, ?string $cursor = null, int $limit = 10): CoinsResponse
     {
-        if (empty($filter['owner'])) {
-            throw new Exception('Owner is required in the filter.');
-        }
-
         return CoinsResponse::fromArray($this->request('suix_getAllCoins', [
-            $filter['owner'],
-            $filter['cursor'] ?? null,
-            $filter['limit'] ?? 10,
+            $owner,
+            $cursor,
+            $limit,
         ]));
     }
 
@@ -166,5 +160,36 @@ class Client
     public function getTotalSupply(string $coinType): string
     {
         return $this->request('suix_getTotalSupply', [$coinType])['value'] ?? '0';
+    }
+
+    /**
+     * @param string $objectId
+     * @param array<mixed> $options
+     * @return SuiObject
+     */
+    public function getObject(string $objectId, array $options = []): SuiObject
+    {
+        return new SuiObject($this->request('sui_getObject', [$objectId, $options])['data'] ?? []);
+    }
+
+    /**
+     * @param string $owner
+     * @param array<mixed> $filter
+     * @param array<mixed> $options
+     * @param string|null $cursor
+     * @param int $limit
+     * @return ObjectResponse
+     */
+    public function getOwnedObjects(string $owner, array $filter = [], array $options = [], ?string $cursor = null, int $limit = 10): ObjectResponse
+    {
+        return ObjectResponse::fromArray($this->request('suix_getOwnedObjects', [
+            $owner,
+            [
+                'filter' => count($filter) > 0 ? $filter : null,
+                'options' => count($options) > 0 ? $options : null
+            ],
+            $cursor,
+            $limit,
+        ]));
     }
 }
