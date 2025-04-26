@@ -6,11 +6,11 @@ namespace Sui;
 
 use Exception;
 use Sui\Constants;
+use Sui\Type\Balance;
 use Sui\Type\SuiObject;
 use Sui\Type\CoinMetadata;
-use Sui\Response\CoinsResponse;
-use Sui\Response\ObjectResponse;
-use Sui\Response\BalanceResponse;
+use Sui\Paginated\PaginatedCoins;
+use Sui\Paginated\PaginatedObjects;
 use GuzzleHttp\Client as GuzzleClient;
 
 class Client
@@ -69,7 +69,10 @@ class Client
         $result = $responseBody['result'] ?? $responseBody;
 
         if (isset($result['error'])) {
-            throw new Exception('Error: ' . $result['error']['message'] ?? 'Unknown error', $result['error']['code'] ?? 0);
+            throw new Exception(
+                'Error: ' . $result['error']['message'] ?? 'Unknown error',
+                $result['error']['code'] ?? 0
+            );
         }
 
         return $result;
@@ -86,11 +89,11 @@ class Client
     /**
      * @param string $owner
      * @param string|null $coinType
-     * @return BalanceResponse
+     * @return Balance
      */
-    public function getBalance(string $owner, ?string $coinType = null): BalanceResponse
+    public function getBalance(string $owner, ?string $coinType = null): Balance
     {
-        return BalanceResponse::fromArray($this->request('suix_getBalance', [
+        return new Balance($this->request('suix_getBalance', [
             $owner,
             $coinType ?? Constants::SUI_TYPE_ARG,
         ]));
@@ -98,7 +101,7 @@ class Client
 
     /**
      * @param string $owner
-     * @return array<BalanceResponse>
+     * @return array<Balance>
      */
     public function getAllBalances(string $owner): array
     {
@@ -107,7 +110,7 @@ class Client
         ]);
 
         return array_map(
-            static fn(array $item) => BalanceResponse::fromArray($item),
+            static fn(array $item) => new Balance($item),
             $result ?? []
         );
     }
@@ -117,11 +120,15 @@ class Client
      * @param string|null $coinType
      * @param string|null $cursor
      * @param int $limit
-     * @return CoinsResponse
+     * @return PaginatedCoins
      */
-    public function getCoins(string $owner, ?string $coinType = null, ?string $cursor = null, int $limit = 10): CoinsResponse
-    {
-        return CoinsResponse::fromArray($this->request('suix_getCoins', [
+    public function getCoins(
+        string $owner,
+        ?string $coinType = null,
+        ?string $cursor = null,
+        int $limit = 10
+    ): PaginatedCoins {
+        return PaginatedCoins::fromArray($this->request('suix_getCoins', [
             $owner,
             $coinType ?? Constants::SUI_TYPE_ARG,
             $cursor,
@@ -133,11 +140,11 @@ class Client
      * @param string $owner
      * @param string|null $cursor
      * @param int $limit
-     * @return CoinsResponse
+     * @return PaginatedCoins
      */
-    public function getAllCoins(string $owner, ?string $cursor = null, int $limit = 10): CoinsResponse
+    public function getAllCoins(string $owner, ?string $cursor = null, int $limit = 10): PaginatedCoins
     {
-        return CoinsResponse::fromArray($this->request('suix_getAllCoins', [
+        return PaginatedCoins::fromArray($this->request('suix_getAllCoins', [
             $owner,
             $cursor,
             $limit,
@@ -178,11 +185,16 @@ class Client
      * @param array<mixed> $options
      * @param string|null $cursor
      * @param int $limit
-     * @return ObjectResponse
+     * @return PaginatedObjects
      */
-    public function getOwnedObjects(string $owner, array $filter = [], array $options = [], ?string $cursor = null, int $limit = 10): ObjectResponse
-    {
-        return ObjectResponse::fromArray($this->request('suix_getOwnedObjects', [
+    public function getOwnedObjects(
+        string $owner,
+        array $filter = [],
+        array $options = [],
+        ?string $cursor = null,
+        int $limit = 10
+    ): PaginatedObjects {
+        return PaginatedObjects::fromArray($this->request('suix_getOwnedObjects', [
             $owner,
             [
                 'filter' => count($filter) > 0 ? $filter : null,

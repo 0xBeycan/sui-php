@@ -2,14 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Sui\Response;
+namespace Sui\Paginated;
 
-use Sui\Type\SuiObject;
-
-class ObjectResponse
+abstract class PaginatedBase
 {
     /**
-     * @var array<SuiObject>
+     * @var array<mixed>
      */
     public array $data;
 
@@ -17,21 +15,20 @@ class ObjectResponse
 
     public ?string $nextCursor;
 
+    abstract public static function prepare(self &$instance, array $data): void;
+
     /**
      * @param array<mixed> $data
      * @return self
      */
     public static function fromArray(array $data): self
     {
-        $instance = new self();
-
-        $instance->data = array_map(
-            static fn(array $item) => new SuiObject($item['data']),
-            $data['data'] ?? []
-        );
+        $instance = new static();
 
         $instance->nextCursor = $data['nextCursor'] ?? null;
         $instance->hasNextPage = (bool) ($data['hasNextPage'] ?? false);
+
+        static::prepare($instance, $data);
 
         return $instance;
     }
