@@ -6,6 +6,7 @@ namespace Sui;
 
 use Exception;
 use Sui\Constants;
+use Sui\Response\CoinsResponse;
 use Sui\Response\ObjectResponse;
 use Sui\Response\BalanceResponse;
 use GuzzleHttp\Client as GuzzleClient;
@@ -63,7 +64,7 @@ class Client
 
         $responseBody = json_decode((string) $response->getBody(), true);
 
-        return $responseBody['result']['data'] ?? $responseBody['result'] ?? $responseBody;
+        return $responseBody['result'] ?? $responseBody;
     }
 
     /**
@@ -83,7 +84,7 @@ class Client
         'showType' => true,
     ]): ObjectResponse
     {
-        return ObjectResponse::fromArray($this->request('sui_getObject', [$objectId, $options]));
+        return ObjectResponse::fromArray($this->request('sui_getObject', [$objectId, $options])['data'] ?? []);
     }
 
     /**
@@ -99,6 +100,24 @@ class Client
         return BalanceResponse::fromArray($this->request('suix_getBalance', [
             $filter['owner'],
             $filter['coinType'] ?? Constants::SUI_TYPE_ARG
+        ]));
+    }
+
+    /**
+     * @param array<mixed> $filter
+     * @return CoinsResponse
+     */
+    public function getCoins(array $filter): CoinsResponse
+    {
+        if (empty($filter['owner'])) {
+            throw new Exception('Owner is required in the filter.');
+        }
+
+        return CoinsResponse::fromArray($this->request('suix_getCoins', [
+            $filter['owner'],
+            $filter['coinType'] ?? Constants::SUI_TYPE_ARG,
+            $filter['cursor'] ?? null,
+            $filter['limit'] ?? 10,
         ]));
     }
 }

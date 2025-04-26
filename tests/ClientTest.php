@@ -16,6 +16,21 @@ class ClientTest extends TestCase
     protected Client $client;
 
     /**
+     * @var string
+     */
+    protected string $balanceAddress = '0xd4a5e15e39bed8eb14a87459e2cb43fcec3c0653002e5a9c31320ba8964b6052';
+
+    /**
+     * @var string
+     */
+    protected string $nftType = '0xd324a3ddcd34338b978a02b17407781bfc17cb0b432c38c2e60033522a5e4045::Test_NFT::TEST_NFT';
+
+    /**
+     * @var string
+     */
+    protected string $tokenType = '0xdb2062063e6756bb0c39c1c4a208a8b341f2241d941621ee5c52f00b13e4cb46::Test_USDC::TEST_USDC';
+
+    /**
      * @return void
      */
     public function setUp(): void
@@ -28,7 +43,6 @@ class ClientTest extends TestCase
      */
     public function testGetObject(): void
     {
-        $type = '0xd324a3ddcd34338b978a02b17407781bfc17cb0b432c38c2e60033522a5e4045::Test_NFT::TEST_NFT';
         $objectId = '0x57f764ca497379aca2553ceaccd319194d8057999554a0d0c0e99805f1d0eb9d';
         $response = $this->client->getObject($objectId, [
             "showType" => true,
@@ -41,7 +55,7 @@ class ClientTest extends TestCase
         ]);
 
         $this->assertInstanceOf(ObjectResponse::class, $response);
-        $this->assertEquals($type, $response->type);
+        $this->assertEquals($this->nftType, $response->type);
     }
 
     /**
@@ -50,7 +64,7 @@ class ClientTest extends TestCase
     public function testGetBalance(): void
     {
         $response = $this->client->getBalance([
-            'owner' => '0xd4a5e15e39bed8eb14a87459e2cb43fcec3c0653002e5a9c31320ba8964b6052',
+            'owner' => $this->balanceAddress,
         ]);
 
         $this->assertEquals($response->totalBalance, 100 * 10 ** 9);
@@ -61,6 +75,20 @@ class ClientTest extends TestCase
      */
     public function testGetRpcVersion(): void
     {
-        $this->assertIsString($$this->client->getRpcApiVersion());
+        $this->assertIsString($this->client->getRpcApiVersion());
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetCoins(): void
+    {
+        $response = $this->client->getCoins([
+            'owner' => $this->balanceAddress,
+            'coinType' => $this->tokenType,
+        ]);
+
+        $this->assertIsArray($response->data);
+        $this->assertEquals($response->data[0]->coinType, $this->tokenType);
     }
 }
