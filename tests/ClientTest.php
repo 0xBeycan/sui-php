@@ -44,6 +44,9 @@ class ClientTest extends TestCase
         $this->assertEquals($type, $response->type);
     }
 
+    /**
+     * @return void
+     */
     public function testGetBalance(): void
     {
         $response = $this->client->getBalance([
@@ -51,5 +54,13 @@ class ClientTest extends TestCase
         ]);
 
         $this->assertEquals($response->totalBalance, 100 * 10 ** 9);
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetRpcVersion(): void
+    {
+        $this->assertIsString($$this->client->getRpcApiVersion());
     }
 }

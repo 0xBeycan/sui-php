@@ -67,6 +67,14 @@ class Client
     }
 
     /**
+     * @return ?string
+     */
+    public function getRpcApiVersion(): ?string
+    {
+        return $this->request('rpc.discover')['info']['version'] ?? null;
+    }
+
+    /**
      * @param string $objectId
      * @param array<mixed> $options
      * @return ObjectResponse
