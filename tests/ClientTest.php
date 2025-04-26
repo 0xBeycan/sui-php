@@ -6,6 +6,7 @@ namespace Sui\Tests;
 
 use Sui\Client;
 use PHPUnit\Framework\TestCase;
+use Sui\Response\ObjectResponse;
 
 class ClientTest extends TestCase
 {
@@ -25,8 +26,21 @@ class ClientTest extends TestCase
     /**
      * @return void
      */
-    public function testIsClient(): void
+    public function testGetObject(): void
     {
-        $this->assertIsObject($this->client);
+        $type = '0xd324a3ddcd34338b978a02b17407781bfc17cb0b432c38c2e60033522a5e4045::Test_NFT::TEST_NFT';
+        $objectId = '0x57f764ca497379aca2553ceaccd319194d8057999554a0d0c0e99805f1d0eb9d';
+        $response = $this->client->getObject($objectId, [
+            "showType" => true,
+            "showOwner" => true,
+            "showPreviousTransaction" => true,
+            "showDisplay" => false,
+            "showContent" => true,
+            "showBcs" => false,
+            "showStorageRebate" => true
+        ]);
+
+        $this->assertInstanceOf(ObjectResponse::class, $response);
+        $this->assertEquals($type, $response->type);
     }
 }

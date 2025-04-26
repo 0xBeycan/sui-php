@@ -1,0 +1,319 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sui;
+
+class Utils
+{
+    private const ELLIPSIS = "\u2026";
+
+    private const DIGEST_LENGTH = 10;
+
+    private const TX_DIGEST_LENGTH = 32;
+
+    private const SUI_ADDRESS_LENGTH = 32;
+
+    private const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+    private const SUI_NS_NAME_REGEX =
+    "/^(?!.*(^(?!@)|[-.@])($|[-.@]))(?:[a-z0-9-]{0,63}(?:\.[a-z0-9-]{0,63})*)?@[a-z0-9-]{0,63}$/i";
+
+    private const SUI_NS_DOMAIN_REGEX = "/^(?!.*(^|[-.])($|[-.]))(?:[a-z0-9-]{0,63}\.)+sui$/i";
+
+    private const MAX_SUI_NS_NAME_LENGTH = 235;
+
+    private const NAME_PATTERN = "/^([a-z0-9]+(?:-[a-z0-9]+)*)$/";
+
+    private const VERSION_REGEX = "/^\d+$/";
+
+    private const MAX_APP_SIZE = 64;
+
+    private const NAME_SEPARATOR = "/";
+
+    /**
+     * @param string $address The address to format.
+     * @return string The formatted address.
+     */
+    public static function formatAddress(string $address): string
+    {
+        if (strlen($address) <= 6) {
+            return $address;
+        }
+        $offset = str_starts_with($address, '0x') ? 2 : 0;
+        return '0x' . substr($address, $offset, 4) . self::ELLIPSIS . substr($address, -4);
+    }
+
+    /**
+     * @param string $digest The digest to format.
+     * @return string The formatted digest.
+     */
+    public static function formatDigest(string $digest): string
+    {
+        return substr($digest, 0, self::DIGEST_LENGTH) . self::ELLIPSIS;
+    }
+
+    /**
+     * @param array<int>|string $input
+     * @return string
+     */
+    public static function toBase58(array|string $input): string
+    {
+        if (is_string($input)) {
+            $unpack = unpack('C*', $input);
+            $input = array_values($unpack ? $unpack : []);
+        }
+
+        $base58Array = [];
+        $hex = bin2hex(implode(array_map('chr', $input)));
+
+        $value = '0';
+        $hexLength = strlen($hex);
+        for ($i = 0; $i < $hexLength; $i++) {
+            $value = bcadd(bcmul($value, '16'), base_convert($hex[$i], 16, 10));
+        }
+
+        while (bccomp($value, '0') > 0) {
+            $remainder = bcmod($value, '58');
+            $value = bcdiv($value, '58', 0);
+            $base58Array[] = self::BASE58_ALPHABET[intval($remainder)];
+        }
+
+        foreach ($input as $byte) {
+            if (0 !== $byte) {
+                break;
+            }
+            $base58Array[] = self::BASE58_ALPHABET[0];
+        }
+
+        return implode('', array_reverse($base58Array));
+    }
+
+
+    /**
+     * @param string $input
+     * @return array<int>
+     */
+    public static function fromBase58(string $input): array
+    {
+        $value = '0';
+        for ($i = 0; $i < strlen($input); $i++) {
+            $value = bcadd(bcmul($value, '58'), strval(strpos(self::BASE58_ALPHABET, $input[$i])));
+        }
+
+        // Decimal to hexadecimal conversion
+        $hex = '';
+        while (bccomp($value, '0') > 0) {
+            $remainder = bcmod($value, '16');
+            $hex = dechex(intval($remainder)) . $hex;
+            $value = bcdiv($value, '16', 0);
+        }
+
+        if (0 != strlen($hex) % 2) {
+            $hex = '0' . $hex;
+        }
+
+        $unpack = unpack('C*', hex2bin($hex) ?: '');
+
+        return array_values($unpack ?: []);
+    }
+
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function isValidTransactionDigest(string $value): bool
+    {
+        try {
+            $buffer = self::fromBase58($value);
+            return self::TX_DIGEST_LENGTH === count($buffer);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function isHex(string $value): bool
+    {
+        return 0 === preg_match('/^(0x|0X)?[a-fA-F0-9]+$/', $value) && strlen($value) % 2;
+    }
+
+    /**
+     * @param string $value
+     * @return int
+     */
+    public static function getHexByteLength(string $value): int
+    {
+        return preg_match('/^(0x|0X)/', $value) ? (strlen($value) - 2) / 2 : strlen($value) / 2;
+    }
+
+    /**
+     * @param string $value
+     * @param bool $forceAdd0x
+     * @return string
+     */
+    public static function normalizeSuiAddress(string $value, bool $forceAdd0x = false): string
+    {
+        $address = strtolower($value);
+        if (!$forceAdd0x && str_starts_with($address, '0x')) {
+            $address = substr($address, 2);
+        }
+        return '0x' . str_pad($address, self::SUI_ADDRESS_LENGTH * 2, '0');
+    }
+
+    /**
+     * @param string $value
+     * @param bool $forceAdd0x
+     * @return string
+     */
+    public static function normalizeSuiObjectId(string $value, bool $forceAdd0x = false): string
+    {
+        return self::normalizeSuiAddress($value, $forceAdd0x);
+    }
+
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function isValidSuiAddress(string $value): bool
+    {
+        return self::isHex($value) && self::SUI_ADDRESS_LENGTH === self::getHexByteLength($value);
+    }
+
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function isValidSuiObjectId(string $value): bool
+    {
+        return self::isValidSuiAddress($value);
+    }
+
+    /**
+     * @param string $value
+     * @return object
+     */
+    public static function parseStructTag(string $value): object
+    {
+        $address = substr($value, 0, strpos($value, '::'));
+        $module = substr(
+            $value,
+            strpos($value, '::') + 2,
+            strpos($value, '::', strpos($value, '::') + 2) - strpos($value, '::') - 2
+        );
+        $name = substr($value, strrpos($value, '::') + 2);
+        return (object)[
+            'address' => self::normalizeSuiAddress($address),
+            'module' => $module,
+            'name' => $name,
+        ];
+    }
+
+    /**
+     * @param string $value
+     * @return object
+     */
+    public static function parseTypeTag(string $value): object
+    {
+        if (str_contains($value, '::')) {
+            return self::parseStructTag($value);
+        }
+        return (object)[
+            'address' => self::normalizeSuiAddress($value),
+            'module' => '',
+            'name' => $value,
+        ];
+    }
+
+    /**
+     * @param string $value
+     * @return string
+     */
+    public static function normalizeStructTag(string $value): string
+    {
+        $structTag = self::parseStructTag($value);
+        return sprintf('%s::%s::%s', $structTag->address, $structTag->module, $structTag->name);
+    }
+
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function isValidSuiNSName(string $value): bool
+    {
+        if (strlen($value) > self::MAX_SUI_NS_NAME_LENGTH) {
+            return false;
+        }
+        if (str_contains($value, '@')) {
+            return preg_match(self::SUI_NS_NAME_REGEX, $value);
+        }
+        return preg_match(self::SUI_NS_DOMAIN_REGEX, $value);
+    }
+
+
+    /**
+     * @param string $name
+     * @param string $format
+     * @return string
+     */
+    public static function normalizeSuiNSName(string $name, string $format = 'at'): string
+    {
+        $lowerCase = strtolower($name);
+        $parts = [];
+        if (str_contains($lowerCase, '@')) {
+            if (!preg_match(self::SUI_NS_NAME_REGEX, $lowerCase)) {
+                throw new \Exception(sprintf('Invalid SuiNS name %s', $name));
+            }
+            [$labels, $domain] = explode('@', $lowerCase);
+            $parts = [...($labels ? explode('.', $labels) : []), $domain];
+        } else {
+            if (!preg_match(self::SUI_NS_DOMAIN_REGEX, $lowerCase)) {
+                throw new \Exception(sprintf('Invalid SuiNS name %s', $name));
+            }
+            $parts = explode('.', $lowerCase);
+            array_pop($parts);
+        }
+        if ('dot' === $format) {
+            return sprintf('%s.sui', implode('.', $parts));
+        }
+        return sprintf('%s@%s', implode('.', array_slice($parts, 0, -1)), end($parts));
+    }
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public static function isValidNamedPackage(string $name): bool
+    {
+        $parts = explode(self::NAME_SEPARATOR, $name);
+        if (count($parts) < 2 || count($parts) > 3) {
+            return false;
+        }
+        [$org, $app, $version] = $parts;
+        if (isset($version) && !preg_match(self::VERSION_REGEX, $version)) {
+            return false;
+        }
+        if (!self::isValidSuiNSName($org)) {
+            return false;
+        }
+        return preg_match(self::NAME_PATTERN, $app) && strlen($app) < self::MAX_APP_SIZE;
+    }
+
+    /**
+     * @param string $type
+     * @return bool
+     */
+    public static function isValidNamedType(string $type): bool
+    {
+        $splitType = preg_split('/::|<|>|,/', $type);
+        foreach ($splitType as $t) {
+            if (str_contains($t, self::NAME_SEPARATOR) && !self::isValidNamedPackage($t)) {
+                return false;
+            }
+        }
+        return true;
+    }
+}
