@@ -136,6 +136,9 @@ class ClientTest extends TestCase
     public function testGetOwnedObject(): void
     {
         $response = $this->client->getOwnedObjects($this->balanceAddress);
-        $this->assertEquals($response->nextCursor, '0xffdb31461dc8c82c4a267c5a27f8424e1c4cf2f13fc36aff259b813f0201571b');
+        $this->assertEquals(
+            $response->nextCursor,
+            '0xffdb31461dc8c82c4a267c5a27f8424e1c4cf2f13fc36aff259b813f0201571b'
+        );
     }
 }

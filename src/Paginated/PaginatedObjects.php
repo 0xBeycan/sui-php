@@ -9,7 +9,7 @@ use Sui\Type\SuiObject;
 class PaginatedObjects extends PaginatedBase
 {
     /**
-     * @param self &$instance
+     * @param PaginatedBase &$instance
      * @param array<mixed> $data
      * @return void
      */

@@ -15,7 +15,12 @@ abstract class PaginatedBase
 
     public ?string $nextCursor;
 
-    abstract public static function prepare(self &$instance, array $data): void;
+    /**
+     * @param PaginatedBase &$instance
+     * @param array<mixed> $data
+     * @return void
+     */
+    abstract public static function prepare(PaginatedBase &$instance, array $data): void;
 
     /**
      * @param array<mixed> $data

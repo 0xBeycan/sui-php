@@ -9,7 +9,7 @@ use Sui\Type\CoinStruct;
 class PaginatedCoins extends PaginatedBase
 {
     /**
-     * @param self &$instance
+     * @param PaginatedBase &$instance
      * @param array<mixed> $data
      * @return void
      */
