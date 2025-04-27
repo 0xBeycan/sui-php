@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sui\Paginated;
 
-use Sui\Type\SuiObject;
+use Sui\Type\SuiObjetData;
 
 class PaginatedObjects extends PaginatedBase
 {
@@ -16,7 +16,7 @@ class PaginatedObjects extends PaginatedBase
     public static function prepare(PaginatedBase &$instance, array $data): void
     {
         $instance->data = array_map(
-            static fn(array $item) => new SuiObject($item['data']),
+            static fn(array $item) => new SuiObjetData($item['data']),
             $data['data'] ?? []
         );
     }

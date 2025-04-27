@@ -6,7 +6,7 @@ namespace Sui\Tests;
 
 use Sui\Client;
 use Sui\Constants;
-use Sui\Type\SuiObject;
+use Sui\Type\SuiObjetData;
 use PHPUnit\Framework\TestCase;
 use Sui\Response\ObjectResponse;
 
@@ -126,7 +126,7 @@ class ClientTest extends TestCase
             "showStorageRebate" => true
         ]);
 
-        $this->assertInstanceOf(SuiObject::class, $response);
+        $this->assertInstanceOf(SuiObjetData::class, $response);
         $this->assertEquals($this->nftType, $response->type);
     }
 
@@ -140,5 +140,16 @@ class ClientTest extends TestCase
             $response->nextCursor,
             '0xffdb31461dc8c82c4a267c5a27f8424e1c4cf2f13fc36aff259b813f0201571b'
         );
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetObjectRead(): void
+    {
+        $objectId = '0x11af4b844ff94b3fbef6e36b518da3ad4c5856fa686464524a876b463d129760';
+        $response = $this->client->tryGetPastObject($objectId, 4);
+
+        $this->assertEquals($response->status, 'ObjectNotExists');
     }
 }

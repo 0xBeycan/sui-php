@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sui\Type;
 
-class SuiObject
+class SuiObjetData
 {
     public ?string $type;
 
@@ -14,7 +14,14 @@ class SuiObject
 
     public string $objectId;
 
+    /**
+     * @var array<string,mixed>|null
+     */
+    public ?array $display;
+
     public ?string $storageRebate;
+
+    public ?RawDataObject $bsc;
 
     public ?ObjectOwner $owner;
 
@@ -27,13 +34,15 @@ class SuiObject
      */
     public function __construct(mixed $data)
     {
-        $this->type = $data['type'] ?? null;
         $this->digest = $data['digest'];
         $this->version = $data['version'];
         $this->objectId = $data['objectId'];
+        $this->type = $data['type'] ?? null;
+        $this->display = $data['display'] ?? null;
         $this->storageRebate = $data['storageRebate'] ?? null;
+        $this->previousTransaction = $data['previousTransaction'] ?? null;
+        $this->bsc = isset($data['bcs']) ? new RawDataObject($data['bcs']) : null;
         $this->owner = isset($data['owner']) ? new ObjectOwner($data['owner']) : null;
         $this->content = isset($data['content']) ? new ObjectContent($data['content']) : null;
-        $this->previousTransaction = $data['previousTransaction'] ?? null;
     }
 }

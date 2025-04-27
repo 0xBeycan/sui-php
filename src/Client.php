@@ -7,7 +7,8 @@ namespace Sui;
 use Exception;
 use Sui\Constants;
 use Sui\Type\Balance;
-use Sui\Type\SuiObject;
+use Sui\Type\ObjectRead;
+use Sui\Type\SuiObjetData;
 use Sui\Type\CoinMetadata;
 use Sui\Paginated\PaginatedCoins;
 use Sui\Paginated\PaginatedObjects;
@@ -172,11 +173,11 @@ class Client
     /**
      * @param string $objectId
      * @param array<mixed> $options
-     * @return SuiObject
+     * @return SuiObjetData
      */
-    public function getObject(string $objectId, array $options = []): SuiObject
+    public function getObject(string $objectId, array $options = []): SuiObjetData
     {
-        return new SuiObject($this->request('sui_getObject', [$objectId, $options])['data'] ?? []);
+        return new SuiObjetData($this->request('sui_getObject', [$objectId, $options])['data'] ?? []);
     }
 
     /**
@@ -202,6 +203,21 @@ class Client
             ],
             $cursor,
             $limit,
+        ]));
+    }
+
+    /**
+     * @param string $id
+     * @param float $version
+     * @param array<mixed> $options
+     * @return ObjectRead
+     */
+    public function tryGetPastObject(string $id, float $version, ?array $options = []): ObjectRead
+    {
+        return new ObjectRead($this->request('sui_tryGetPastObject', [
+            $id,
+            $version,
+            $options,
         ]));
     }
 }

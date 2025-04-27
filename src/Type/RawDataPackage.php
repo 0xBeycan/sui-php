@@ -1,0 +1,47 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sui\Type;
+
+class RawDataObject
+{
+    public string $id;
+
+    /**
+     * @var array<string,UpgradeInfo>
+     */
+    public array $linkageTable;
+
+    /**
+     * @var array<string,string>
+     */
+    public array $moduleMap;
+
+    /**
+     * @var array<TypeOrigin>
+     */
+    public array $typeOriginTable;
+
+    public string $version;
+
+    /**
+     * @param mixed $data
+     */
+    public function __construct(mixed $data)
+    {
+        $this->id = $data['id'];
+        $this->version = $data['version'];
+        $this->moduleMap = $data['moduleMap'];
+
+        $this->linkageTable = array_map(
+            static fn(array $item) => new UpgradeInfo($item),
+            $data['linkageTable']
+        );
+
+        $this->typeOriginTable = array_map(
+            static fn(array $item) => new TypeOrigin($item),
+            $data['typeOriginTable']
+        );
+    }
+}
