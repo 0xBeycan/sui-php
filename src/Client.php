@@ -12,6 +12,8 @@ use Sui\Type\SuiObjetData;
 use Sui\Type\CoinMetadata;
 use Sui\Type\DelegatedStake;
 use Sui\Type\TransactionBlock;
+use Sui\Type\DevInspectResults;
+use Sui\Transactions\Transaction;
 use Sui\Paginated\PaginatedCoins;
 use Sui\Paginated\PaginatedEvents;
 use Sui\Paginated\PaginatedObjects;
@@ -442,6 +444,40 @@ class Client
             $cursor,
             $limit,
             "descending" === ($order ?? "descending")
+        ]));
+    }
+
+    /**
+     * @param string $sender
+     * @param string|array<int>|Transaction $transactionBlock
+     * @param int|null $gasPrice
+     * @param string|null $epoch
+     * @return DevInspectResults
+     */
+    public function devInspectTransactionBlock(
+        string $sender,
+        string|array|Transaction $transactionBlock,
+        ?int $gasPrice = null,
+        ?string $epoch = null,
+    ): DevInspectResults {
+        $devInspectTxBytes = $transactionBlock;
+
+        if ($transactionBlock instanceof Transaction) {
+            $transactionBlock->setSenderIfNotSet($sender);
+            $buildedTx = $transactionBlock->build([
+                'client' => $this,
+                'onlyTransactionKind' => true
+            ]);
+            $devInspectTxBytes = base64_encode(serialize($buildedTx));
+        } elseif (is_array($transactionBlock)) {
+            $devInspectTxBytes = base64_encode(serialize($transactionBlock));
+        }
+
+        return new DevInspectResults($this->request('sui_devInspectTransactionBlock', [
+            $sender,
+            $devInspectTxBytes,
+            $gasPrice ? (string) $gasPrice : null,
+            $epoch
         ]));
     }
 

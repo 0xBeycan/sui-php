@@ -20,6 +20,11 @@ class ClientTest extends TestCase
     /**
      * @var string
      */
+    protected string $sender = '0xd68cb1e0d64372021cd6fd54940d213c939d16cd4667bba507df880f1e17c78b';
+
+    /**
+     * @var string
+     */
     protected string $balanceAddress = '0xd4a5e15e39bed8eb14a87459e2cb43fcec3c0653002e5a9c31320ba8964b6052';
 
     /**
@@ -267,5 +272,18 @@ class ClientTest extends TestCase
 
         $this->assertIsArray($response->data);
         $this->assertEquals(true, count($response->data) > 0);
+    }
+
+    /**
+     * @return void
+     */
+    public function testDevInspectTransactionBlock(): void
+    {
+        $response = $this->client->devInspectTransactionBlock(
+            $this->sender,
+            "AAIACEBCDwAAAAAAACDaRViin0wt1U0/vK9msi7qc3ct2JPr/MyXNgnTRXzd/QICAAEBAAABAQMAAAAAAQEA"
+        );
+
+        $this->assertEquals($response->effects->status->status, 'success');
     }
 }
