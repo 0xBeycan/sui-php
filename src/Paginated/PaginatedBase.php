@@ -13,7 +13,10 @@ abstract class PaginatedBase
 
     public bool $hasNextPage;
 
-    public ?string $nextCursor;
+    /**
+     * @var mixed null|string|array
+     */
+    public mixed $nextCursor;
 
     /**
      * @param PaginatedBase &$instance
@@ -33,7 +36,7 @@ abstract class PaginatedBase
         $instance->nextCursor = $data['nextCursor'] ?? null;
         $instance->hasNextPage = (bool) ($data['hasNextPage'] ?? false);
 
-        static::prepare($instance, $data);
+        static::prepare($instance, $data['data'] ?? []);
 
         return $instance;
     }

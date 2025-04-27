@@ -255,4 +255,17 @@ class ClientTest extends TestCase
         $this->assertEquals($response->stakeSubsidyDecreaseRate, 1000);
         $this->assertIsArray($response->activeValidators);
     }
+
+    /**
+     * @return void
+     */
+    public function testQueryEvents(): void
+    {
+        $response = $this->client->queryEvents([
+            "All" => []
+        ]);
+
+        $this->assertIsArray($response->data);
+        $this->assertEquals(true, count($response->data) > 0);
+    }
 }

@@ -22,7 +22,7 @@ class PaginatedTransactionBlocks extends PaginatedBase
     {
         $instance->data = array_map(
             static fn(array $item) => new TransactionBlock($item),
-            $data['data'] ?? []
+            $data
         );
     }
 }

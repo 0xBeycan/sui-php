@@ -22,7 +22,7 @@ class PaginatedCoins extends PaginatedBase
     {
         $instance->data = array_map(
             static fn(array $item) => new CoinStruct($item),
-            $data['data'] ?? []
+            $data
         );
     }
 }

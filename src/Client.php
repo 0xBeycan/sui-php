@@ -13,6 +13,7 @@ use Sui\Type\CoinMetadata;
 use Sui\Type\DelegatedStake;
 use Sui\Type\TransactionBlock;
 use Sui\Paginated\PaginatedCoins;
+use Sui\Paginated\PaginatedEvents;
 use Sui\Paginated\PaginatedObjects;
 use Sui\Type\Move\NormalizedStruct;
 use Sui\Type\Move\NormalizedModule;
@@ -421,6 +422,27 @@ class Client
     public function getLatestSuiSystemState(): SuiSystemStateSummary
     {
         return new SuiSystemStateSummary($this->request('suix_getLatestSuiSystemState'));
+    }
+
+    /**
+     * @param array<mixed> $query
+     * @param string|null $cursor
+     * @param integer|null $limit
+     * @param string|null $order
+     * @return PaginatedEvents
+     */
+    public function queryEvents(
+        array $query,
+        ?string $cursor = null,
+        ?int $limit = null,
+        ?string $order = null
+    ): PaginatedEvents {
+        return PaginatedEvents::fromArray($this->request('suix_queryEvents', [
+            $query,
+            $cursor,
+            $limit,
+            "descending" === ($order ?? "descending")
+        ]));
     }
 
     /**

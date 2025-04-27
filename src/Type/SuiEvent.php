@@ -20,9 +20,9 @@ class SuiEvent
 
     public string $type;
 
-    public string $bsc;
+    public string $bcs;
 
-    public string $bscEncoding;
+    public string $bcsEncoding;
 
     /**
      * @param mixed $data
@@ -30,13 +30,13 @@ class SuiEvent
     public function __construct(mixed $data)
     {
         $this->id = new EventId($data['id']);
-        $this->packageId = (string) $data['packageId'];
+        $this->packageId = $data['packageId'];
         $this->parsedJson = $data['parsedJson'];
-        $this->sender = (string) $data['sender'];
-        $this->timestampMs = (string) $data['timestampMs'];
-        $this->transactionModule = (string) $data['transactionModule'];
-        $this->type = (string) $data['type'];
-        $this->bsc = (string) $data['bsc'];
-        $this->bscEncoding = (string) $data['bscEncoding'];
+        $this->sender = $data['sender'];
+        $this->timestampMs = $data['timestampMs'];
+        $this->transactionModule = $data['transactionModule'];
+        $this->type = $data['type'];
+        $this->bcs = $data['bcs'];
+        $this->bcsEncoding = $data['bcsEncoding'];
     }
 }

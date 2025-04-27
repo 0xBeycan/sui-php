@@ -21,7 +21,7 @@ class SuiObjetData
 
     public ?string $storageRebate;
 
-    public ?RawDataObject $bsc;
+    public ?RawDataObject $bcs;
 
     public ?ObjectOwner $owner;
 
@@ -41,7 +41,7 @@ class SuiObjetData
         $this->display = $data['display'] ?? null;
         $this->storageRebate = $data['storageRebate'] ?? null;
         $this->previousTransaction = $data['previousTransaction'] ?? null;
-        $this->bsc = isset($data['bcs']) ? new RawDataObject($data['bcs']) : null;
+        $this->bcs = isset($data['bcs']) ? new RawDataObject($data['bcs']) : null;
         $this->owner = isset($data['owner']) ? new ObjectOwner($data['owner']) : null;
         $this->content = isset($data['content']) ? new ObjectContent($data['content']) : null;
     }
