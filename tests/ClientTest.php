@@ -25,6 +25,11 @@ class ClientTest extends TestCase
     /**
      * @var string
      */
+    protected string $package = '0xdb2062063e6756bb0c39c1c4a208a8b341f2241d941621ee5c52f00b13e4cb46';
+
+    /**
+     * @var string
+     */
     protected string $nftType =
     '0xd324a3ddcd34338b978a02b17407781bfc17cb0b432c38c2e60033522a5e4045::Test_NFT::TEST_NFT';
 
@@ -151,5 +156,34 @@ class ClientTest extends TestCase
         $response = $this->client->tryGetPastObject($objectId, 4);
 
         $this->assertEquals($response->status, 'ObjectNotExists');
+    }
+
+    /**
+     * @return void
+     */
+    public function testMultiGetObjects(): void
+    {
+        $objectId = '0x57f764ca497379aca2553ceaccd319194d8057999554a0d0c0e99805f1d0eb9d';
+        $response = $this->client->multiGetObjects([$objectId], [
+            "showType" => true,
+            "showOwner" => true,
+            "showPreviousTransaction" => true,
+            "showDisplay" => false,
+            "showContent" => true,
+            "showBcs" => false,
+            "showStorageRebate" => true
+        ]);
+
+        $this->assertInstanceOf(SuiObjetData::class, $response[0]);
+        $this->assertEquals($this->nftType, $response[0]->type);
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetNormalizedMoveModulesByPackage(): void
+    {
+        $response = $this->client->getNormalizedMoveModulesByPackage($this->package);
+        $this->assertEquals(array_shift($response)->name, 'Test_USDC');
     }
 }

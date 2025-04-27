@@ -12,6 +12,7 @@ use Sui\Type\SuiObjetData;
 use Sui\Type\CoinMetadata;
 use Sui\Paginated\PaginatedCoins;
 use Sui\Paginated\PaginatedObjects;
+use Sui\Type\Move\NormalizedModule;
 use GuzzleHttp\Client as GuzzleClient;
 
 class Client
@@ -219,5 +220,50 @@ class Client
             $version,
             $options,
         ]));
+    }
+
+    /**
+     * @param array<string> $ids
+     * @param array<mixed> $options
+     * @return array<SuiObjetData>
+     */
+    public function multiGetObjects(array $ids, array $options = []): array
+    {
+        return array_map(
+            static fn(array $item) => new SuiObjetData($item['data'] ?? []),
+            $this->request('sui_multiGetObjects', [
+                $ids,
+                $options,
+            ])
+        );
+    }
+
+    /**
+     * @param string $package
+     * @param string $module
+     * @param string $function
+     * @return array<string>
+     */
+    public function getMoveFunctionArgTypes(string $package, string $module, string $function): array
+    {
+        return $this->request('sui_getMoveFunctionArgTypes', [
+            $package,
+            $module,
+            $function,
+        ]);
+    }
+
+    /**
+     * @param string $package
+     * @return array<NormalizedModule>
+     */
+    public function getNormalizedMoveModulesByPackage(string $package): array
+    {
+        return array_map(
+            static fn(array $item) => new NormalizedModule($item),
+            $this->request('sui_getNormalizedMoveModulesByPackage', [
+                $package,
+            ])
+        );
     }
 }
