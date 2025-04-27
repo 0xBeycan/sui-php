@@ -80,35 +80,35 @@ class TransactionEffects
         $this->transactionDigest = $data['transactionDigest'];
 
         $this->created = isset($data['created']) ? array_map(
-            static fn(array $item) => new OwnedObjectRef($item),
+            fn(array $item) => new OwnedObjectRef($item),
             $data['created']
         ) : null;
         $this->deleted = isset($data['deleted']) ? array_map(
-            static fn(array $item) => new SuiObjectRef($item),
+            fn(array $item) => new SuiObjectRef($item),
             $data['deleted']
         ) : null;
         $this->modifiedAtVersions = isset($data['modifiedAtVersions']) ? array_map(
-            static fn(array $item) => new ModifiedAtVersions($item),
+            fn(array $item) => new ModifiedAtVersions($item),
             $data['modifiedAtVersions']
         ) : null;
         $this->mutated = isset($data['mutated']) ? array_map(
-            static fn(array $item) => new OwnedObjectRef($item),
+            fn(array $item) => new OwnedObjectRef($item),
             $data['mutated']
         ) : null;
         $this->sharedObjects = isset($data['sharedObjects']) ? array_map(
-            static fn(array $item) => new SuiObjectRef($item),
+            fn(array $item) => new SuiObjectRef($item),
             $data['sharedObjects']
         ) : null;
         $this->unwrapped = isset($data['unwrapped']) ? array_map(
-            static fn(array $item) => new OwnedObjectRef($item),
+            fn(array $item) => new OwnedObjectRef($item),
             $data['unwrapped']
         ) : null;
         $this->unwrappedThenDeleted = isset($data['unwrappedThenDeleted']) ? array_map(
-            static fn(array $item) => new SuiObjectRef($item),
+            fn(array $item) => new SuiObjectRef($item),
             $data['unwrappedThenDeleted']
         ) : null;
         $this->wrapped = isset($data['wrapped']) ? array_map(
-            static fn(array $item) => new SuiObjectRef($item),
+            fn(array $item) => new SuiObjectRef($item),
             $data['wrapped']
         ) : null;
     }

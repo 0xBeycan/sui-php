@@ -32,15 +32,15 @@ class NormalizedFunction
     {
         $this->isEntry = (bool) ($data['isEntry'] ?? false);
         $this->parameters = array_map(
-            static fn(array $parameter) => new NormalizedType($parameter),
+            fn(array $parameter) => new NormalizedType($parameter),
             $data['parameters']
         );
         $this->return = array_map(
-            static fn(array $return) => new NormalizedType($return),
+            fn(array $return) => new NormalizedType($return),
             $data['return']
         );
         $this->typeParameters = array_map(
-            static fn(array $typeParameter) => new AbilitySet($typeParameter),
+            fn(array $typeParameter) => new AbilitySet($typeParameter),
             $data['typeParameters']
         );
         $this->visibility = (string) ($data['visibility'] ?? '');

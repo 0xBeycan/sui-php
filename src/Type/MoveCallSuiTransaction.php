@@ -28,7 +28,7 @@ class MoveCallSuiTransaction
     public function __construct(array $data)
     {
         $this->arguments = array_map(
-            static fn(array $item) => new SuiArgument($item),
+            fn(array $item) => new SuiArgument($item),
             $data['arguments'] ?? []
         );
         $this->function = $data['function'];

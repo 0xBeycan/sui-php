@@ -26,7 +26,7 @@ class SuiGasData
         $this->owner = $data['owner'];
         $this->price = $data['price'];
         $this->payment = array_map(
-            static fn(array $item) => new SuiObjectRef($item),
+            fn(array $item) => new SuiObjectRef($item),
             $data['payment'] ?? []
         );
     }

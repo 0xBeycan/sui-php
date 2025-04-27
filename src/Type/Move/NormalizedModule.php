@@ -57,19 +57,19 @@ class NormalizedModule
         $this->address = $data['address'];
         $this->fileFormatVersion = (int) ($data['fileFormatVersion'] ?? 0);
         $this->enums = isset($data['enums']) ? array_map(
-            static fn(array $enum) => new NormalizedEnum($enum),
+            fn(array $enum) => new NormalizedEnum($enum),
             $data['enums']
         ) : null;
         $this->exposedFunctions = array_map(
-            static fn(array $function) => new NormalizedFunction($function),
+            fn(array $function) => new NormalizedFunction($function),
             $data['exposedFunctions']
         );
         $this->friends = array_map(
-            static fn(array $friend) => new ModuleId($friend),
+            fn(array $friend) => new ModuleId($friend),
             $data['friends']
         );
         $this->structs = array_map(
-            static fn(array $struct) => new NormalizedStruct($struct),
+            fn(array $struct) => new NormalizedStruct($struct),
             $data['structs']
         );
     }

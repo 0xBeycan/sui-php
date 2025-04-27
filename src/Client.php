@@ -121,7 +121,7 @@ class Client
         ]);
 
         return array_map(
-            static fn(array $item) => new Balance($item),
+            fn(array $item) => new Balance($item),
             $result ?? []
         );
     }
@@ -239,7 +239,7 @@ class Client
     public function multiGetObjects(array $ids, array $options = []): array
     {
         return array_map(
-            static fn(array $item) => new SuiObjetData($item['data'] ?? []),
+            fn(array $item) => new SuiObjetData($item['data'] ?? []),
             $this->request('sui_multiGetObjects', [
                 $ids,
                 $options,
@@ -269,7 +269,7 @@ class Client
     public function getNormalizedMoveModulesByPackage(string $package): array
     {
         return array_map(
-            static fn(array $item) => new NormalizedModule($item),
+            fn(array $item) => new NormalizedModule($item),
             $this->request('sui_getNormalizedMoveModulesByPackage', [
                 $package,
             ])
@@ -366,7 +366,7 @@ class Client
     public function multiGetTransactionBlocks(array $digests, array $options = []): array
     {
         return array_map(
-            static fn(array $item) => new TransactionBlock($item),
+            fn(array $item) => new TransactionBlock($item),
             $this->request('sui_multiGetTransactionBlocks', [
                 $digests,
                 $options,
@@ -397,7 +397,7 @@ class Client
     public function getStakes(string $owner): array
     {
         return array_map(
-            static fn(array $item) => new DelegatedStake($item),
+            fn(array $item) => new DelegatedStake($item),
             $this->request('suix_getStakes', [
                 $owner,
             ])
@@ -411,7 +411,7 @@ class Client
     public function getStakesByIds(array $ids): array
     {
         return array_map(
-            static fn(array $item) => new DelegatedStake($item),
+            fn(array $item) => new DelegatedStake($item),
             $this->request('suix_getStakesByIds', [
                 $ids,
             ])

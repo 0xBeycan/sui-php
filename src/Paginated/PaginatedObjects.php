@@ -21,7 +21,7 @@ class PaginatedObjects extends PaginatedBase
     public static function prepare(PaginatedBase &$instance, array $data): void
     {
         $instance->data = array_map(
-            static fn(array $item) => new SuiObjetData($item['data']),
+            fn(array $item) => new SuiObjetData($item['data']),
             $data
         );
     }

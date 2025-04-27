@@ -21,7 +21,7 @@ class PaginatedTransactionBlocks extends PaginatedBase
     public static function prepare(PaginatedBase &$instance, array $data): void
     {
         $instance->data = array_map(
-            static fn(array $item) => new TransactionBlock($item),
+            fn(array $item) => new TransactionBlock($item),
             $data
         );
     }

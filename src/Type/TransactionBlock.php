@@ -59,7 +59,7 @@ class TransactionBlock
         $this->digest = $data['digest'];
         $this->balanceChanges = isset($data['balanceChanges'])
             ? array_map(
-                static fn(array $item) => new BalanceChange($item),
+                fn(array $item) => new BalanceChange($item),
                 $data['balanceChanges']
             )
             : null;
@@ -69,13 +69,13 @@ class TransactionBlock
         $this->errors = $data['errors'] ?? null;
         $this->events = isset($data['events'])
             ? array_map(
-                static fn(array $item) => new SuiEvent($item),
+                fn(array $item) => new SuiEvent($item),
                 $data['events']
             )
             : null;
         $this->objectChanges = isset($data['objectChanges'])
             ? array_map(
-                static fn(array $item) => new SuiObjectChange($item),
+                fn(array $item) => new SuiObjectChange($item),
                 $data['objectChanges']
             )
             : null;

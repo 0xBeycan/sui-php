@@ -75,19 +75,19 @@ class TransactionKind
         $this->consensusDeterminedVersionAssignments = $data['consensus_determined_version_assignments'] ?? null;
 
         $this->inputs = isset($data['inputs']) ? array_map(
-            static fn(array $item) => new SuiCallArg($item),
+            fn(array $item) => new SuiCallArg($item),
             $data['inputs']
         ) : null;
         $this->transactions = isset($data['transactions']) ? array_map(
-            static fn(array $item) => new SuiTransaction($item),
+            fn(array $item) => new SuiTransaction($item),
             $data['transactions']
         ) : null;
         $this->newActiveJwks = isset($data['new_active_jwks']) ? array_map(
-            static fn(array $item) => new SuiActiveJwk($item),
+            fn(array $item) => new SuiActiveJwk($item),
             $data['new_active_jwks']
         ) : null;
         $this->endOfEpochTransactions = isset($data['transactions']) ? array_map(
-            static fn(array $item) => new SuiEndOfEpoch($item),
+            fn(array $item) => new SuiEndOfEpoch($item),
             $data['transactions']
         ) : null;
     }

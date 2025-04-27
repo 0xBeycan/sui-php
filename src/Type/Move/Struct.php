@@ -26,7 +26,7 @@ class Struct
         $this->module = $data['module'];
         $this->name = $data['name'];
         $this->typeArguments = array_map(
-            static fn (array|string $item) => new NormalizedType($item),
+            fn (array|string $item) => new NormalizedType($item),
             $data['typeArguments'] ?? []
         );
     }

@@ -28,12 +28,12 @@ class NormalizedEnum
     {
         $this->abilities = $data['abilities'] ?? [];
         $this->typeParameters = array_map(
-            static fn (array $item) => new StructTypeParameter($item),
+            fn (array $item) => new StructTypeParameter($item),
             $data['typeParameters'] ?? []
         );
         $this->variants = array_map(
-            static fn (array $item) => array_map(
-                static fn (array $variant) => new NormalizedField($variant),
+            fn (array $item) => array_map(
+                fn (array $variant) => new NormalizedField($variant),
                 $item
             ),
             $data['variants'] ?? []

@@ -28,11 +28,11 @@ class NormalizedStruct
     {
         $this->abilities = $data['abilities'] ?? [];
         $this->fields = array_map(
-            static fn(array $field) => new NormalizedField($field),
+            fn(array $field) => new NormalizedField($field),
             $data['fields']
         );
         $this->typeParameters = array_map(
-            static fn(array $typeParameter) => new StructTypeParameter($typeParameter),
+            fn(array $typeParameter) => new StructTypeParameter($typeParameter),
             $data['typeParameters']
         );
     }

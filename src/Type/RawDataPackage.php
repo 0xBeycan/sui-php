@@ -35,12 +35,12 @@ class RawDataObject
         $this->moduleMap = $data['moduleMap'];
 
         $this->linkageTable = array_map(
-            static fn(array $item) => new UpgradeInfo($item),
+            fn(array $item) => new UpgradeInfo($item),
             $data['linkageTable']
         );
 
         $this->typeOriginTable = array_map(
-            static fn(array $item) => new TypeOrigin($item),
+            fn(array $item) => new TypeOrigin($item),
             $data['typeOriginTable']
         );
     }

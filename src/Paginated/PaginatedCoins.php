@@ -21,7 +21,7 @@ class PaginatedCoins extends PaginatedBase
     public static function prepare(PaginatedBase &$instance, array $data): void
     {
         $instance->data = array_map(
-            static fn(array $item) => new CoinStruct($item),
+            fn(array $item) => new CoinStruct($item),
             $data
         );
     }
