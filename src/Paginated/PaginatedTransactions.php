@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sui\Paginated;
 
-use Sui\Type\CoinStruct;
+use Sui\Type\Transaction;
 
-class PaginatedCoins extends PaginatedBase
+class PaginatedTransactions extends PaginatedBase
 {
     /**
-     * @var array<CoinStruct>
+     * @var array<Transaction>
      */
     public array $data;
 
@@ -21,7 +21,7 @@ class PaginatedCoins extends PaginatedBase
     public static function prepare(PaginatedBase &$instance, array $data): void
     {
         $instance->data = array_map(
-            static fn(array $item) => new CoinStruct($item),
+            static fn(array $item) => new Transaction($item),
             $data['data'] ?? []
         );
     }

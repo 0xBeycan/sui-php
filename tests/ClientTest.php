@@ -25,7 +25,12 @@ class ClientTest extends TestCase
     /**
      * @var string
      */
-    protected string $package = '0xdb2062063e6756bb0c39c1c4a208a8b341f2241d941621ee5c52f00b13e4cb46';
+    protected string $tokenPackage = '0xdb2062063e6756bb0c39c1c4a208a8b341f2241d941621ee5c52f00b13e4cb46';
+
+    /**
+     * @var string
+     */
+    protected string $nftPackage = '0xd324a3ddcd34338b978a02b17407781bfc17cb0b432c38c2e60033522a5e4045';
 
     /**
      * @var string
@@ -183,7 +188,7 @@ class ClientTest extends TestCase
      */
     public function testGetNormalizedMoveModulesByPackage(): void
     {
-        $response = $this->client->getNormalizedMoveModulesByPackage($this->package);
+        $response = $this->client->getNormalizedMoveModulesByPackage($this->tokenPackage);
         $this->assertEquals(array_shift($response)->name, 'Test_USDC');
     }
 
@@ -192,7 +197,7 @@ class ClientTest extends TestCase
      */
     public function testGetNormalizedMoveModule(): void
     {
-        $response = $this->client->getNormalizedMoveModule($this->package, 'Test_USDC');
+        $response = $this->client->getNormalizedMoveModule($this->tokenPackage, 'Test_USDC');
         $this->assertEquals($response->name, 'Test_USDC');
     }
 
@@ -201,7 +206,7 @@ class ClientTest extends TestCase
      */
     public function testGetNormalizedMoveFunction(): void
     {
-        $response = $this->client->getNormalizedMoveFunction($this->package, 'Test_USDC', 'init');
+        $response = $this->client->getNormalizedMoveFunction($this->tokenPackage, 'Test_USDC', 'init');
         $this->assertEquals($response->visibility, 'Private');
     }
 
@@ -210,7 +215,34 @@ class ClientTest extends TestCase
      */
     public function testGetNormalizedMoveStruct(): void
     {
-        $response = $this->client->getNormalizedMoveStruct($this->package, 'Test_USDC', 'TEST_USDC');
+        $response = $this->client->getNormalizedMoveStruct($this->tokenPackage, 'Test_USDC', 'TEST_USDC');
         $this->assertEquals(in_array('Drop', $response->abilities['abilities']), true);
+    }
+
+    /**
+     * @return void
+     */
+    public function testQueryTransactionBlocks(): void
+    {
+        $response = $this->client->queryTransactionBlocks(
+            [
+                'MoveFunction' => [
+                    'package' => $this->nftPackage,
+                    'module' => 'Test_NFT',
+                    'function' => 'update_description',
+                ],
+            ],
+            [
+                'showBalanceChanges' => true,
+                'showEffects' => true,
+                'showEvents' => true,
+                'showInput' => true,
+                'showObjectChanges' => true,
+                'showRawEffects' => true,
+                'showRawInput' => true,
+            ]
+        );
+        $this->assertEquals(count($response->data), 1);
+        $this->assertEquals($response->data[0]->digest, 'wSXPaPPJUmS2rJtsAMQnHQanhxUHcixBzPw8yGihTXF');
     }
 }

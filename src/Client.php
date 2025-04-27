@@ -15,6 +15,7 @@ use Sui\Paginated\PaginatedObjects;
 use Sui\Type\Move\NormalizedStruct;
 use Sui\Type\Move\NormalizedModule;
 use Sui\Type\Move\NormalizedFunction;
+use Sui\Paginated\PaginatedTransactions;
 use GuzzleHttp\Client as GuzzleClient;
 
 class Client
@@ -130,7 +131,7 @@ class Client
         string $owner,
         ?string $coinType = null,
         ?string $cursor = null,
-        int $limit = 10
+        ?int $limit = null
     ): PaginatedCoins {
         return PaginatedCoins::fromArray($this->request('suix_getCoins', [
             $owner,
@@ -146,7 +147,7 @@ class Client
      * @param int $limit
      * @return PaginatedCoins
      */
-    public function getAllCoins(string $owner, ?string $cursor = null, int $limit = 10): PaginatedCoins
+    public function getAllCoins(string $owner, ?string $cursor = null, ?int $limit = null): PaginatedCoins
     {
         return PaginatedCoins::fromArray($this->request('suix_getAllCoins', [
             $owner,
@@ -196,7 +197,7 @@ class Client
         array $filter = [],
         array $options = [],
         ?string $cursor = null,
-        int $limit = 10
+        ?int $limit = null
     ): PaginatedObjects {
         return PaginatedObjects::fromArray($this->request('suix_getOwnedObjects', [
             $owner,
@@ -310,5 +311,43 @@ class Client
             $module,
             $struct,
         ]));
+    }
+
+    /**
+     * @param array<mixed> $filter
+     * @param array<mixed> $options
+     * @param string|null $cursor
+     * @param string|null $order
+     * @param integer|null $limit
+     * @return PaginatedTransactions
+     */
+    public function queryTransactionBlocks(
+        array $filter = [],
+        array $options = [],
+        ?string $cursor = null,
+        ?string $order = null,
+        ?int $limit = null
+    ): PaginatedTransactions {
+        return PaginatedTransactions::fromArray($this->request('suix_queryTransactionBlocks', [
+            [
+                'filter' => count($filter) > 0 ? $filter : null,
+                'options' => count($options) > 0 ? $options : null
+            ],
+            $cursor,
+            $limit,
+            "descending" === ($order ?? "descending")
+        ]));
+    }
+
+    /**
+     * @return array<mixed>
+     */
+    // @phpcs:ignore
+    public function experimental_asClientExtension(): array
+    {
+        return [
+            'name' => 'jsonRPC',
+            'register' => fn() => $this
+        ];
     }
 }

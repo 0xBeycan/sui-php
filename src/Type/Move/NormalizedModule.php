@@ -58,7 +58,7 @@ class NormalizedModule
         $this->fileFormatVersion = (int) ($data['fileFormatVersion'] ?? 0);
         $this->enums = isset($data['enums']) ? array_map(
             static fn(array $enum) => new NormalizedEnum($enum),
-            $data['enums'] ?? []
+            $data['enums']
         ) : null;
         $this->exposedFunctions = array_map(
             static fn(array $function) => new NormalizedFunction($function),
