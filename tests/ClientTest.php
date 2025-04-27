@@ -186,4 +186,31 @@ class ClientTest extends TestCase
         $response = $this->client->getNormalizedMoveModulesByPackage($this->package);
         $this->assertEquals(array_shift($response)->name, 'Test_USDC');
     }
+
+    /**
+     * @return void
+     */
+    public function testGetNormalizedMoveModule(): void
+    {
+        $response = $this->client->getNormalizedMoveModule($this->package, 'Test_USDC');
+        $this->assertEquals($response->name, 'Test_USDC');
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetNormalizedMoveFunction(): void
+    {
+        $response = $this->client->getNormalizedMoveFunction($this->package, 'Test_USDC', 'init');
+        $this->assertEquals($response->visibility, 'Private');
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetNormalizedMoveStruct(): void
+    {
+        $response = $this->client->getNormalizedMoveStruct($this->package, 'Test_USDC', 'TEST_USDC');
+        $this->assertEquals(in_array('Drop', $response->abilities['abilities']), true);
+    }
 }

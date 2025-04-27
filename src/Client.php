@@ -12,7 +12,9 @@ use Sui\Type\SuiObjetData;
 use Sui\Type\CoinMetadata;
 use Sui\Paginated\PaginatedCoins;
 use Sui\Paginated\PaginatedObjects;
+use Sui\Type\Move\NormalizedStruct;
 use Sui\Type\Move\NormalizedModule;
+use Sui\Type\Move\NormalizedFunction;
 use GuzzleHttp\Client as GuzzleClient;
 
 class Client
@@ -265,5 +267,48 @@ class Client
                 $package,
             ])
         );
+    }
+
+    /**
+     * @param string $package
+     * @param string $module
+     * @return NormalizedModule
+     */
+    public function getNormalizedMoveModule(string $package, string $module): NormalizedModule
+    {
+        return new NormalizedModule($this->request('sui_getNormalizedMoveModule', [
+            $package,
+            $module,
+        ]));
+    }
+
+    /**
+     * @param string $package
+     * @param string $module
+     * @param string $function
+     * @return NormalizedFunction
+     */
+    public function getNormalizedMoveFunction(string $package, string $module, string $function): NormalizedFunction
+    {
+        return new NormalizedFunction($this->request('sui_getNormalizedMoveFunction', [
+            $package,
+            $module,
+            $function,
+        ]));
+    }
+
+    /**
+     * @param string $package
+     * @param string $module
+     * @param string $struct
+     * @return NormalizedStruct
+     */
+    public function getNormalizedMoveStruct(string $package, string $module, string $struct): NormalizedStruct
+    {
+        return new NormalizedStruct($this->request('sui_getNormalizedMoveStruct', [
+            $package,
+            $module,
+            $struct,
+        ]));
     }
 }

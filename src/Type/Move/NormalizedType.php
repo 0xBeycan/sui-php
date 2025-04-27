@@ -8,7 +8,7 @@ class NormalizedType
 {
     public ?string $key;
 
-    public string|Struct|float $type;
+    public string|Struct|float|NormalizedType $value;
 
     /**
      * @param array<mixed>|string $data
@@ -17,15 +17,20 @@ class NormalizedType
     {
         if (is_string($data)) {
             $this->key = null;
-            $this->type = $data;
+            $this->value = $data;
         } else {
             $this->key = array_key_first($data);
-            switch ($data[$this->key]) {
+            switch ($this->key) {
                 case 'Struct':
-                    $this->type = new Struct($data[$this->key]);
+                    $this->value = new Struct($data[$this->key]);
+                    break;
+                case 'Vector':
+                case 'Reference':
+                case 'MutableReference':
+                    $this->value = new NormalizedType($data[$this->key]);
                     break;
                 default:
-                    $this->type = $data[$this->key];
+                    $this->value = $data[$this->key];
             }
         }
     }

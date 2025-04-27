@@ -6,7 +6,10 @@ namespace Sui\Type\Move;
 
 class NormalizedStruct
 {
-    public AbilitySet $abilities;
+    /**
+     * @var array<mixed>
+     */
+    public array $abilities;
 
     /**
      * @var array<string,NormalizedField>
@@ -23,7 +26,7 @@ class NormalizedStruct
      */
     public function __construct(array $data)
     {
-        $this->abilities = new AbilitySet($data['abilities']);
+        $this->abilities = $data['abilities'] ?? [];
         $this->fields = array_map(
             static fn(array $field) => new NormalizedField($field),
             $data['fields']

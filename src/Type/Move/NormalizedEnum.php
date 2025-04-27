@@ -6,7 +6,10 @@ namespace Sui\Type\Move;
 
 class NormalizedEnum
 {
-    public AbilitySet $abilities;
+    /**
+     * @var array<mixed>
+     */
+    public array $abilities;
 
     /**
      * @var array<string,StructTypeParameter>
@@ -23,7 +26,7 @@ class NormalizedEnum
      */
     public function __construct(array $data)
     {
-        $this->abilities = new AbilitySet($data['abilities']);
+        $this->abilities = $data['abilities'] ?? [];
         $this->typeParameters = array_map(
             static fn (array $item) => new StructTypeParameter($item),
             $data['typeParameters'] ?? []
