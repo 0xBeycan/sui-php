@@ -316,4 +316,36 @@ class Utils
         }
         return true;
     }
+
+    /**
+     * @param string $value
+     * @return array<int>
+     */
+    public static function fromHex(string $value): array
+    {
+        $normalized = str_starts_with($value, '0x') ? substr($value, 2) : $value;
+        $padded = 0 === strlen($normalized) % 2 ? $normalized : '0' . $normalized;
+        $intArr = [];
+        preg_match_all('/[0-9a-fA-F]{2}/', $padded, $matches);
+        foreach ($matches[0] as $byte) {
+            $intArr[] = hexdec($byte);
+        }
+        if (count($intArr) !== strlen($padded) / 2) {
+            throw new \Exception(sprintf('Invalid hex string %s', $value));
+        }
+        return array_values($intArr);
+    }
+
+    /**
+     * @param array<int> $bytes
+     * @return string
+     */
+    public static function toHex(array $bytes): string
+    {
+        $hex = '';
+        foreach ($bytes as $byte) {
+            $hex .= str_pad(dechex($byte), 2, '0', STR_PAD_LEFT);
+        }
+        return $hex;
+    }
 }

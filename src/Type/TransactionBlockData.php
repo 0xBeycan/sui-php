@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sui\Type;
 
-class InnerTransactionData
+class TransactionBlockData
 {
     public SuiGasData $gasData;
 

@@ -6,7 +6,7 @@ namespace Sui\Type;
 
 class InnerTransaction
 {
-    public InnerTransactionData $data;
+    public TransactionBlockData $data;
 
     /**
      * @var array<string> $txSignatures
@@ -19,6 +19,6 @@ class InnerTransaction
     public function __construct(array $data)
     {
         $this->txSignatures = $data['txSignatures'];
-        $this->data = new InnerTransactionData($data['data']);
+        $this->data = new TransactionBlockData($data['data']);
     }
 }

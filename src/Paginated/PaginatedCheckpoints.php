@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sui\Paginated;
 
-use Sui\Type\TransactionBlock;
+use Sui\Type\Checkpoint;
 
-class PaginatedTransactionBlocks extends PaginatedBase
+class PaginatedCheckpoints extends PaginatedBase
 {
     /**
-     * @var array<TransactionBlock>
+     * @var array<Checkpoint>
      */
     public array $data;
 
@@ -21,7 +21,7 @@ class PaginatedTransactionBlocks extends PaginatedBase
     public static function prepare(PaginatedBase &$instance, array $data): void
     {
         $instance->data = array_map(
-            fn(array $item) => new TransactionBlock($item),
+            fn(array $item) => new Checkpoint($item),
             $data
         );
     }

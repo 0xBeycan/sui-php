@@ -8,7 +8,6 @@ use Sui\Client;
 use Sui\Constants;
 use Sui\Type\SuiObjetData;
 use PHPUnit\Framework\TestCase;
-use Sui\Response\ObjectResponse;
 
 class ClientTest extends TestCase
 {
@@ -285,5 +284,49 @@ class ClientTest extends TestCase
         );
 
         $this->assertEquals($response->effects->status->status, 'success');
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetCheckpoint(): void
+    {
+        $response = $this->client->getCheckpoint('1032143');
+        $this->assertEquals($response->sequenceNumber, '1032143');
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetCheckpoints(): void
+    {
+        $response = $this->client->getCheckpoints();
+        $this->assertIsArray($response->data);
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetCommitteeInfo(): void
+    {
+        $response = $this->client->getCommitteeInfo();
+        $this->assertIsArray($response->validators);
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetValidatorsApy(): void
+    {
+        $response = $this->client->getValidatorsApy();
+        $this->assertIsArray($response->apys);
+    }
+
+    /**
+     * @return void
+     */
+    public function testGetChainIdentifier(): void
+    {
+        $this->assertIsString($this->client->getChainIdentifier());
     }
 }
