@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sui\Paginated;
 
-use Sui\Type\Transaction;
+use Sui\Type\TransactionBlock;
 
-class PaginatedTransactions extends PaginatedBase
+class PaginatedTransactionBlocks extends PaginatedBase
 {
     /**
      * @var array<Transaction>
@@ -21,7 +21,7 @@ class PaginatedTransactions extends PaginatedBase
     public static function prepare(PaginatedBase &$instance, array $data): void
     {
         $instance->data = array_map(
-            static fn(array $item) => new Transaction($item),
+            static fn(array $item) => new TransactionBlock($item),
             $data['data'] ?? []
         );
     }

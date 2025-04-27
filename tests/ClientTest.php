@@ -245,4 +245,14 @@ class ClientTest extends TestCase
         $this->assertEquals(count($response->data), 1);
         $this->assertEquals($response->data[0]->digest, 'wSXPaPPJUmS2rJtsAMQnHQanhxUHcixBzPw8yGihTXF');
     }
+
+    /**
+     * @return void
+     */
+    public function testGetLatestSuiSystemState(): void
+    {
+        $response = $this->client->getLatestSuiSystemState();
+        $this->assertEquals($response->stakeSubsidyDecreaseRate, 1000);
+        $this->assertIsArray($response->activeValidators);
+    }
 }

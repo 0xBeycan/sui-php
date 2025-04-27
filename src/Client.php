@@ -10,12 +10,15 @@ use Sui\Type\Balance;
 use Sui\Type\ObjectRead;
 use Sui\Type\SuiObjetData;
 use Sui\Type\CoinMetadata;
+use Sui\Type\DelegatedStake;
+use Sui\Type\TransactionBlock;
 use Sui\Paginated\PaginatedCoins;
 use Sui\Paginated\PaginatedObjects;
 use Sui\Type\Move\NormalizedStruct;
 use Sui\Type\Move\NormalizedModule;
+use Sui\Type\SuiSystemStateSummary;
 use Sui\Type\Move\NormalizedFunction;
-use Sui\Paginated\PaginatedTransactions;
+use Sui\Paginated\PaginatedTransactionBlocks;
 use GuzzleHttp\Client as GuzzleClient;
 
 class Client
@@ -319,7 +322,7 @@ class Client
      * @param string|null $cursor
      * @param string|null $order
      * @param integer|null $limit
-     * @return PaginatedTransactions
+     * @return PaginatedTransactionBlocks
      */
     public function queryTransactionBlocks(
         array $filter = [],
@@ -327,8 +330,8 @@ class Client
         ?string $cursor = null,
         ?string $order = null,
         ?int $limit = null
-    ): PaginatedTransactions {
-        return PaginatedTransactions::fromArray($this->request('suix_queryTransactionBlocks', [
+    ): PaginatedTransactionBlocks {
+        return PaginatedTransactionBlocks::fromArray($this->request('suix_queryTransactionBlocks', [
             [
                 'filter' => count($filter) > 0 ? $filter : null,
                 'options' => count($options) > 0 ? $options : null
@@ -337,6 +340,87 @@ class Client
             $limit,
             "descending" === ($order ?? "descending")
         ]));
+    }
+
+    /**
+     * @param string $digest
+     * @param array<mixed> $options
+     * @return TransactionBlock
+     */
+    public function getTransactionBlock(string $digest, array $options = []): TransactionBlock
+    {
+        return new TransactionBlock($this->request('sui_getTransactionBlock', [
+            $digest,
+            $options,
+        ]));
+    }
+
+    /**
+     * @param array<string> $digests
+     * @param array<mixed> $options
+     * @return array<TransactionBlock>
+     */
+    public function multiGetTransactionBlocks(array $digests, array $options = []): array
+    {
+        return array_map(
+            static fn(array $item) => new TransactionBlock($item),
+            $this->request('sui_multiGetTransactionBlocks', [
+                $digests,
+                $options,
+            ])
+        );
+    }
+
+    /**
+     * @return int
+     */
+    public function getTotalTransactionBlocks(): int
+    {
+        return (int) $this->request('sui_getTotalTransactionBlocks');
+    }
+
+    /**
+     * @return int
+     */
+    public function getReferenceGasPrice(): int
+    {
+        return (int) $this->request('suix_getReferenceGasPrice');
+    }
+
+    /**
+     * @param string $owner
+     * @return array<DelegatedStake>
+     */
+    public function getStakes(string $owner): array
+    {
+        return array_map(
+            static fn(array $item) => new DelegatedStake($item),
+            $this->request('suix_getStakes', [
+                $owner,
+            ])
+        );
+    }
+
+    /**
+     * @param array<string> $ids
+     * @return array<DelegatedStake>
+     */
+    public function getStakesByIds(array $ids): array
+    {
+        return array_map(
+            static fn(array $item) => new DelegatedStake($item),
+            $this->request('suix_getStakesByIds', [
+                $ids,
+            ])
+        );
+    }
+
+    /**
+     * @return SuiSystemStateSummary
+     */
+    public function getLatestSuiSystemState(): SuiSystemStateSummary
+    {
+        return new SuiSystemStateSummary($this->request('suix_getLatestSuiSystemState'));
     }
 
     /**

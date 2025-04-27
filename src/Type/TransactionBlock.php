@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sui\Type;
 
-class Transaction
+class TransactionBlock
 {
     public string $digest;
 
