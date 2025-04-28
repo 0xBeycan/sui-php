@@ -15,14 +15,18 @@ class Reader
     private int $bytePosition = 0;
 
     /**
-     * @param string $data Data to use as a buffer (hex string)
+     * @param string|array<int> $data Data to use as a buffer (hex string or byte array)
      */
-    public function __construct(string $data)
+    public function __construct(string|array $data)
     {
-        if (str_starts_with($data, '0x')) {
-            $data = substr($data, 2);
+        if (is_array($data)) {
+            $this->data = implode(array_map(fn($b) => str_pad(dechex($b), 2, '0', STR_PAD_LEFT), $data));
+        } else {
+            if (str_starts_with($data, '0x')) {
+                $data = substr($data, 2);
+            }
+            $this->data = $data;
         }
-        $this->data = $data;
     }
 
     /**
@@ -43,6 +47,9 @@ class Reader
      */
     public function read8(): int
     {
+        if ($this->bytePosition * 2 >= strlen($this->data)) {
+            return 0;
+        }
         $value = hexdec(substr($this->data, $this->bytePosition * 2, 2));
         $this->shift(1);
         return (int) $value;
@@ -54,9 +61,14 @@ class Reader
      */
     public function read16(): int
     {
-        $value = hexdec(substr($this->data, $this->bytePosition * 2, 4));
-        $this->shift(2);
-        return (int) $value;
+        if ($this->bytePosition * 2 >= strlen($this->data)) {
+            return 0;
+        }
+        $value = 0;
+        for ($i = 0; $i < 2; $i++) {
+            $value |= $this->read8() << ($i * 8);
+        }
+        return $value;
     }
 
     /**
@@ -65,9 +77,14 @@ class Reader
      */
     public function read32(): int
     {
-        $value = hexdec(substr($this->data, $this->bytePosition * 2, 8));
-        $this->shift(4);
-        return (int) $value;
+        if ($this->bytePosition * 2 >= strlen($this->data)) {
+            return 0;
+        }
+        $value = 0;
+        for ($i = 0; $i < 4; $i++) {
+            $value |= $this->read8() << ($i * 8);
+        }
+        return $value;
     }
 
     /**
@@ -76,17 +93,13 @@ class Reader
      */
     public function read64(): string
     {
-        $bytes = [];
-        $hexString = substr($this->data, $this->bytePosition * 2, 16);
-        for ($i = 0; $i < 16; $i += 2) {
-            $bytes[] = hexdec(substr($hexString, $i, 2));
+        if ($this->bytePosition * 2 >= strlen($this->data)) {
+            return '0';
         }
-        $this->shift(8);
-
         $value = '0';
-        for ($i = 7; $i >= 0; $i--) {
-            $value = bcmul($value, '256');
-            $value = bcadd($value, (string)$bytes[$i]);
+        for ($i = 0; $i < 8; $i++) {
+            $byte = $this->read8();
+            $value = bcadd($value, bcmul((string)$byte, bcpow('256', (string)$i)));
         }
         return $value;
     }
@@ -97,10 +110,15 @@ class Reader
      */
     public function read128(): string
     {
-        $value1 = $this->read64();
-        $value2 = $this->read64();
-        $result = $this->decToHex($value2) . str_pad($this->decToHex($value1), 16, '0', STR_PAD_LEFT);
-        return $this->hexToDec($result);
+        if ($this->bytePosition * 2 >= strlen($this->data)) {
+            return '0';
+        }
+        $value = '0';
+        for ($i = 0; $i < 16; $i++) {
+            $byte = $this->read8();
+            $value = bcadd($value, bcmul((string)$byte, bcpow('256', (string)$i)));
+        }
+        return $value;
     }
 
     /**
@@ -109,10 +127,15 @@ class Reader
      */
     public function read256(): string
     {
-        $value1 = $this->read128();
-        $value2 = $this->read128();
-        $result = $this->decToHex($value2) . str_pad($this->decToHex($value1), 32, '0', STR_PAD_LEFT);
-        return $this->hexToDec($result);
+        if ($this->bytePosition * 2 >= strlen($this->data)) {
+            return '0';
+        }
+        $value = '0';
+        for ($i = 0; $i < 32; $i++) {
+            $byte = $this->read8();
+            $value = bcadd($value, bcmul((string)$byte, bcpow('256', (string)$i)));
+        }
+        return $value;
     }
 
     /**
@@ -122,15 +145,13 @@ class Reader
      */
     public function readBytes(int $num): array
     {
-        $bytes = [];
-        $hexString = substr($this->data, $this->bytePosition * 2, $num * 2);
-        if (false === $hexString) {
+        if ($this->bytePosition * 2 >= strlen($this->data)) {
             return array_fill(0, $num, 0);
         }
-        for ($i = 0; $i < strlen($hexString); $i += 2) {
-            $bytes[] = hexdec(substr($hexString, $i, 2));
+        $bytes = [];
+        for ($i = 0; $i < $num; $i++) {
+            $bytes[] = $this->read8();
         }
-        $this->shift($num);
         return $bytes;
     }
 
@@ -143,11 +164,12 @@ class Reader
     {
         $value = 0;
         $shift = 0;
-        $length = 0;
 
         while (true) {
-            $byte = hexdec(substr($this->data, ($this->bytePosition + $length) * 2, 2));
-            $length++;
+            if ($this->bytePosition * 2 >= strlen($this->data)) {
+                break;
+            }
+            $byte = $this->read8();
             $value |= ($byte & 0x7f) << $shift;
             if (0 === ($byte & 0x80)) {
                 break;
@@ -155,40 +177,6 @@ class Reader
             $shift += 7;
         }
 
-        $this->shift($length);
         return $value;
-    }
-
-    /**
-     * Convert hexadecimal string to decimal string using bcmath
-     * @param string $hex Hexadecimal string
-     * @return string Decimal string
-     */
-    private function hexToDec(string $hex): string
-    {
-        $dec = '0';
-        $len = strlen($hex);
-        for ($i = 0; $i < $len; $i++) {
-            $dec = bcmul($dec, '16');
-            $dec = bcadd($dec, strval(hexdec($hex[$i])));
-        }
-        return $dec;
-    }
-
-    /**
-     * Convert decimal string to hexadecimal string using bcmath
-     * @param string $dec Decimal string
-     * @return string Hexadecimal string
-     */
-    private function decToHex(string $dec): string
-    {
-        $hex = '';
-        $zero = '0';
-        while (bccomp($dec, $zero) > 0) {
-            $rem = bcmod($dec, '16');
-            $hex = dechex(intval($rem)) . $hex;
-            $dec = bcdiv($dec, '16', 0);
-        }
-        return $hex ?: '0';
     }
 }

@@ -282,8 +282,8 @@ class Type
     /**
      * Create a string-like type
      * @param string $name The name of the type
-     * @param \Closure $toBytes Function to convert string to bytes
-     * @param \Closure $fromBytes Function to convert bytes to string
+     * @param \Closure $toBytes Function to convert to bytes
+     * @param \Closure $fromBytes Function to convert from bytes
      * @param \Closure|null $validate Optional validation function
      * @return self The created type
      */
@@ -293,33 +293,21 @@ class Type
         \Closure $fromBytes,
         ?\Closure $validate = null
     ): self {
-        return new self(
+        return self::dynamicSize(
             $name,
-            function (Reader $reader) use ($fromBytes): string {
+            function (Reader $reader) use ($fromBytes): mixed {
                 $length = $reader->readULEB();
                 $bytes = $reader->readBytes($length);
                 return $fromBytes($bytes);
             },
-            function ($value, Writer $writer) use ($toBytes): void {
+            function (mixed $value, Writer $writer) use ($toBytes): void {
                 $bytes = $toBytes($value);
                 $writer->writeULEB(count($bytes));
                 foreach ($bytes as $byte) {
                     $writer->write8($byte);
                 }
             },
-            function ($value, $options) use ($toBytes): array {
-                $bytes = $toBytes($value);
-                $size = Utils::ulebEncode(count($bytes));
-                return array_merge($size, $bytes);
-            },
-            $validate ?? function (mixed $value): void {
-                if (!is_string($value)) {
-                    throw new \TypeError("Expected string, found " . gettype($value));
-                }
-            },
-            function (mixed $value) use ($toBytes): ?int {
-                return null; // Dynamic size
-            }
+            $validate
         );
     }
 
@@ -330,49 +318,41 @@ class Type
      */
     public static function lazy(\Closure $cb): self
     {
-        $lazyType = null;
+        $type = null;
+        $init = function () use ($cb, &$type): Type {
+            if (null === $type) {
+                $type = $cb();
+            }
+            return $type;
+        };
+
         return new self(
             'lazy',
-            function (Reader $reader) use ($cb, &$lazyType): mixed {
-                if (!$lazyType) {
-                    $lazyType = $cb();
-                }
-                return $lazyType->read($reader);
+            function (Reader $reader) use ($init): mixed {
+                return $init()->read($reader);
             },
-            function ($value, Writer $writer) use ($cb, &$lazyType): void {
-                if (!$lazyType) {
-                    $lazyType = $cb();
-                }
-                $lazyType->write($value, $writer);
+            function (mixed $value, Writer $writer) use ($init): void {
+                $init()->write($value, $writer);
             },
-            function ($value, $options) use ($cb, &$lazyType): array {
-                if (!$lazyType) {
-                    $lazyType = $cb();
-                }
-                return $lazyType->serialize($value, $options)->toBytes();
+            function (mixed $value, array $options) use ($init): array {
+                return $init()->serialize($value, $options)->toBytes();
             },
-            function ($value) use ($cb, &$lazyType): void {
-                if (!$lazyType) {
-                    $lazyType = $cb();
-                }
-                $lazyType->validate($value);
+            function (mixed $value) use ($init): void {
+                $init()->validate($value);
             },
-            function ($value) use ($cb, &$lazyType): ?int {
-                if (!$lazyType) {
-                    $lazyType = $cb();
-                }
-                return $lazyType->serializedSize($value);
+            function (mixed $value) use ($init): ?int {
+                return $init()->serializedSize($value);
             }
         );
     }
 
     /**
-     * Transform the type into another type with different input/output types
-     * @param string|null $name Optional new name for the type
-     * @param \Closure|null $input Function to transform input values
-     * @param \Closure|null $output Function to transform output values
+     * Create a transformed type
+     * @param string|null $name The name of the type
+     * @param \Closure|null $input Function to transform input
+     * @param \Closure|null $output Function to transform output
      * @param \Closure|null $validate Optional validation function
-     * @return self The transformed type
+     * @return self The created type
      */
     public function transform(
         ?string $name = null,
@@ -380,27 +360,29 @@ class Type
         ?\Closure $output = null,
         ?\Closure $validate = null
     ): self {
+        $name = $name ?? $this->name;
+        $input = $input ?? function ($x) {
+            return $x;
+        };
+        $output = $output ?? function ($x) {
+            return $x;
+        };
+        $validate = $validate ?? $this->validate;
+
         return new self(
-            $name ?? $this->name,
+            $name,
             function (Reader $reader) use ($output): mixed {
-                $value = $this->read($reader);
-                return $output ? $output($value) : $value;
+                return $output($this->read($reader));
             },
-            function ($value, Writer $writer) use ($input): void {
-                $transformedValue = $input ? $input($value) : $value;
-                $this->write($transformedValue, $writer);
+            function (mixed $value, Writer $writer) use ($input): void {
+                $this->write($input($value), $writer);
             },
-            function ($value, $options) use ($input): array {
-                $transformedValue = $input ? $input($value) : $value;
-                $serialized = $this->serialize($transformedValue, $options);
-                return array_values(unpack('C*', $serialized->toBytes()) ?: []);
+            function (mixed $value, array $options) use ($input): array {
+                return $this->serialize($input($value), $options)->toBytes();
             },
-            $validate ?? function ($value): void {
-                $this->validate($value);
-            },
-            function ($value) use ($input): ?int {
-                $transformedValue = $input ? $input($value) : $value;
-                return $this->serializedSize($transformedValue);
+            $validate,
+            function (mixed $value) use ($input): ?int {
+                return $this->serializedSize($input($value));
             }
         );
     }
@@ -420,11 +402,11 @@ class Type
             $read,
             $write,
             function ($value, $options) use ($write): array {
-                $writer = new Writer($options ?? []);
+                $writer = new Writer($options);
                 $write($value, $writer);
                 return $writer->toBytes();
             },
-            $validate ?? function ($value): void {
+            $validate ?? function (): void {
             },
             function (): ?int {
                 return null;

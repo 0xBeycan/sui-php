@@ -201,7 +201,7 @@ class Bcs
      */
     public static function string(string $name = 'string', ?\Closure $validate = null): Type
     {
-        return Type::stringLike(
+        return self::vector(self::u8(), $name)->transform(
             $name,
             function (string $value): array {
                 return array_values(unpack('C*', $value) ?: []);
@@ -221,7 +221,7 @@ class Bcs
     }
 
     /**
-     * Creates a Type that represents a fixed length array of a given type
+     * Creates a Type representing a fixed length array of a given type
      *
      * @param int $size The number of elements in the array
      * @param Type $type The Type of each element in the array
@@ -242,9 +242,9 @@ class Bcs
                 }
                 return $result;
             },
-            function (array $value, Writer $writer) use ($type): void {
-                foreach ($value as $item) {
-                    $type->write($item, $writer);
+            function (array $value, Writer $writer) use ($size, $type): void {
+                for ($i = 0; $i < $size; $i++) {
+                    $type->write($value[$i] ?? null, $writer);
                 }
             },
             function (mixed $value) use ($size, $validate): void {
@@ -296,7 +296,7 @@ class Bcs
     }
 
     /**
-     * Creates a Type representing a variable length vector of a given type
+     * Creates a Type representing a vector of a given type
      *
      * @param Type $type The Type of each element in the vector
      * @param string $name The name of the type
@@ -306,7 +306,7 @@ class Bcs
     public static function vector(Type $type, string $name = null, ?\Closure $validate = null): Type
     {
         $name = $name ?? "vector<{$type->getName()}>";
-        return self::dynamicSize(
+        return Type::dynamicSize(
             $name,
             function (Reader $reader) use ($type): array {
                 $length = $reader->readULEB();
@@ -356,7 +356,7 @@ class Bcs
             },
             function (array $value, Writer $writer) use ($types): void {
                 foreach ($types as $i => $type) {
-                    $type->write($value[$i], $writer);
+                    $type->write($value[$i] ?? null, $writer);
                 }
             },
             function (mixed $value) use ($types, $validate): void {
@@ -440,8 +440,11 @@ class Bcs
                 }
                 $variant = $variants[$kind];
                 $type = $values[$variant];
-                $value = null !== $type ? $type->read($reader) : null;
-                return ['$kind' => $variant, $variant => $value];
+                $result = ['$kind' => $variant];
+                if (null !== $type) {
+                    $result[$variant] = $type->read($reader);
+                }
+                return $result;
             },
             function (array $value, Writer $writer) use ($variants, $values): void {
                 if (!isset($value['$kind'])) {
