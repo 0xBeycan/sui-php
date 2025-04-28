@@ -349,16 +349,43 @@ class Utils
     }
 
     /**
-     * @param array<int> $bytes
+     * @param array<int>|string $bytes
      * @return string
      */
-    public static function toHex(array $bytes): string
+    public static function toHex(array|string $bytes): string
     {
+        if (is_string($bytes)) {
+            $unpack = unpack('C*', $bytes);
+            $bytes = array_values($unpack ? $unpack : []);
+        }
         $hex = '';
         foreach ($bytes as $byte) {
             $hex .= str_pad(dechex($byte), 2, '0', STR_PAD_LEFT);
         }
         return $hex;
+    }
+
+    /**
+     * @param array<int>|string $bytes
+     * @return string
+     */
+    public static function toBase64(array|string $bytes): string
+    {
+        if (is_string($bytes)) {
+            $unpack = unpack('C*', $bytes);
+            $bytes = array_values($unpack ? $unpack : []);
+        }
+        return base64_encode(implode(array_map('chr', $bytes)));
+    }
+
+    /**
+     * @param string $base64
+     * @return array<int>
+     */
+    public static function fromBase64(string $base64): array
+    {
+        $unpack = unpack('C*', base64_decode($base64) ?: '');
+        return array_values($unpack ? $unpack : []);
     }
 
     /**

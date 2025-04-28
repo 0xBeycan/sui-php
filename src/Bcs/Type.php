@@ -86,11 +86,14 @@ class Type
 
     /**
      * Parse bytes into a value
-     * @param array<int> $bytes The bytes to parse
+     * @param array<int>|string $bytes The bytes to parse
      * @return mixed The parsed value
      */
-    public function parse(array $bytes): mixed
+    public function parse(array|string $bytes): mixed
     {
+        if (is_string($bytes)) {
+            $bytes = array_values(unpack('C*', hex2bin($bytes)) ?: []);
+        }
         $hex = Utils::toHex($bytes);
         $reader = new Reader($hex);
         return $this->read($reader);
