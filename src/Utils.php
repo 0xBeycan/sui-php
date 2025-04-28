@@ -152,6 +152,15 @@ class Utils
 
     /**
      * @param string $value
+     * @return string
+     */
+    public static function prepareSuiAddress(string $value): string
+    {
+        return str_replace('0x', '', self::normalizeSuiAddress($value));
+    }
+
+    /**
+     * @param string $value
      * @param bool $forceAdd0x
      * @return string
      */
@@ -322,7 +331,7 @@ class Utils
 
     /**
      * @param string $value
-     * @return array<int|float>
+     * @return array<int>
      */
     public static function fromHex(string $value): array
     {
@@ -336,7 +345,7 @@ class Utils
         if (count($intArr) !== strlen($padded) / 2) {
             throw new \Exception(sprintf('Invalid hex string %s', $value));
         }
-        return array_values($intArr);
+        return array_map('intval', array_values($intArr));
     }
 
     /**
@@ -350,5 +359,134 @@ class Utils
             $hex .= str_pad(dechex($byte), 2, '0', STR_PAD_LEFT);
         }
         return $hex;
+    }
+
+    /**
+     * Helper utility: write number as an ULEB array.
+     * Original code is taken from: https://www.npmjs.com/package/uleb128 (no longer exists)
+     *
+     * @param int $num The number to encode
+     * @return array<int> The ULEB encoded array
+     */
+    public static function ulebEncode(int $num): array
+    {
+        $arr = [];
+        $len = 0;
+
+        if (0 === $num) {
+            return [0];
+        }
+
+        while ($num > 0) {
+            $arr[$len] = $num & 0x7f;
+            if ($num >>= 7) {
+                $arr[$len] |= 0x80;
+            }
+            $len += 1;
+        }
+
+        return $arr;
+    }
+
+    /**
+     * Helper utility: decode ULEB as an array of numbers.
+     * Original code is taken from: https://www.npmjs.com/package/uleb128 (no longer exists)
+     *
+     * @param array<int>|array<int, int> $arr The ULEB encoded array
+     * @return array{value: int, length: int} The decoded value and length
+     */
+    public static function ulebDecode(array $arr): array
+    {
+        $total = 0;
+        $shift = 0;
+        $len = 0;
+
+        while (true) {
+            $byte = $arr[$len];
+            $len += 1;
+            $total |= ($byte & 0x7f) << $shift;
+            if (0 === ($byte & 0x80)) {
+                break;
+            }
+            $shift += 7;
+        }
+
+        return [
+            'value' => $total,
+            'length' => $len,
+        ];
+    }
+
+    /**
+     * Encode data with either 'hex', 'base58', or 'base64'.
+     *
+     * @param array<int> $data Data to encode
+     * @param string $encoding Encoding to use: base58, base64, or hex
+     * @return string Encoded value
+     * @throws \Exception If unsupported encoding is provided
+     */
+    public static function encodeStr(array $data, string $encoding): string
+    {
+        return match ($encoding) {
+            'base58' => self::toBase58($data),
+            'base64' => base64_encode(implode(array_map('chr', $data))),
+            'hex' => self::toHex($data),
+            default => throw new \Exception('Unsupported encoding, supported values are: base58, base64, hex'),
+        };
+    }
+
+    /**
+     * Decode either 'base58', 'base64', or 'hex' data.
+     *
+     * @param string $data Data to decode
+     * @param string $encoding Encoding to use: base58, base64, or hex
+     * @return array<int> Decoded value
+     * @throws \Exception If unsupported encoding is provided
+     */
+    public static function decodeStr(string $data, string $encoding): array
+    {
+        return match ($encoding) {
+            'base58' => self::fromBase58($data),
+            'base64' => array_values(unpack('C*', base64_decode($data) ?: '') ?: []),
+            'hex' => self::fromHex($data),
+            default => throw new \Exception('Unsupported encoding, supported values are: base58, base64, hex'),
+        };
+    }
+
+    /**
+     * Split a string containing generic parameters.
+     *
+     * @param string $str String to split
+     * @param array{string, string} $genericSeparators Separators for generic parameters, defaults to ['<', '>']
+     * @return array<string> Array of split tokens
+     */
+    public static function splitGenericParameters(
+        string $str,
+        array $genericSeparators = ['<', '>']
+    ): array {
+        [$left, $right] = $genericSeparators;
+        $tokens = [];
+        $word = '';
+        $nestedAngleBrackets = 0;
+
+        for ($i = 0; $i < strlen($str); $i++) {
+            $char = $str[$i];
+            if ($left === $char) {
+                $nestedAngleBrackets++;
+            }
+            if ($right === $char) {
+                $nestedAngleBrackets--;
+            }
+            if (0 === $nestedAngleBrackets && ',' === $char) {
+                $tokens[] = trim($word);
+                $word = '';
+                continue;
+            }
+            $word .= $char;
+        }
+
+        $tokens[] = trim($word);
+
+        return $tokens;
     }
 }
