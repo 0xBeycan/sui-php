@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sui\Transactions\Bcs;
+namespace Sui\Bcs;
 
 class Serialized
 {
