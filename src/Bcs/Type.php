@@ -79,7 +79,7 @@ class Type
     public function serialize(mixed $value, ?array $options = null): Serialized
     {
         $this->validate($value);
-        $bytes = ($this->serialize)($value, $options);
+        $bytes = ($this->serialize)($value, $options ?? []);
         $byteString = pack('C*', ...$bytes);
         return new Serialized($this, $byteString);
     }
@@ -92,10 +92,21 @@ class Type
     public function parse(array|string $bytes): mixed
     {
         if (is_string($bytes)) {
-            $bytes = array_values(unpack('C*', hex2bin($bytes)) ?: []);
+            if (str_starts_with($bytes, '0x')) {
+                $bytes = substr($bytes, 2);
+            }
+            if (ctype_xdigit($bytes)) {
+                if (0 !== strlen($bytes) % 2) {
+                    $bytes = '0' . $bytes;
+                }
+                $reader = new Reader($bytes);
+            } else {
+                $bytes = array_values(unpack('C*', $bytes) ?: []);
+                $reader = new Reader(Utils::toHex($bytes));
+            }
+        } else {
+            $reader = new Reader(Utils::toHex($bytes));
         }
-        $hex = Utils::toHex($bytes);
-        $reader = new Reader($hex);
         return $this->read($reader);
     }
 
@@ -287,8 +298,7 @@ class Type
             function (Reader $reader) use ($fromBytes): string {
                 $length = $reader->readULEB();
                 $bytes = $reader->readBytes($length);
-                $bytesArray = array_values(unpack('C*', hex2bin($bytes)) ?: []);
-                return $fromBytes($bytesArray);
+                return $fromBytes($bytes);
             },
             function ($value, Writer $writer) use ($toBytes): void {
                 $bytes = $toBytes($value);
@@ -382,19 +392,42 @@ class Type
             },
             function ($value, $options) use ($input): array {
                 $transformedValue = $input ? $input($value) : $value;
-                $strBytes = $this->serialize($transformedValue, $options)->toBytes();
-                return Utils::fromHex($strBytes);
+                $serialized = $this->serialize($transformedValue, $options);
+                return array_values(unpack('C*', $serialized->toBytes()) ?: []);
             },
-            function ($value) use ($input, $validate): void {
-                if ($validate) {
-                    $validate($value);
-                }
-                $transformedValue = $input ? $input($value) : $value;
-                $this->validate($transformedValue);
+            $validate ?? function ($value): void {
+                $this->validate($value);
             },
             function ($value) use ($input): ?int {
                 $transformedValue = $input ? $input($value) : $value;
                 return $this->serializedSize($transformedValue);
+            }
+        );
+    }
+
+    /**
+     * Create a dynamic size type
+     * @param string $name The name of the type
+     * @param \Closure $read Function to read the type
+     * @param \Closure $write Function to write the type
+     * @param \Closure|null $validate Optional validation function
+     * @return self The created type
+     */
+    public static function dynamicSize(string $name, \Closure $read, \Closure $write, ?\Closure $validate = null): self
+    {
+        return new self(
+            $name,
+            $read,
+            $write,
+            function ($value, $options) use ($write): array {
+                $writer = new Writer($options ?? []);
+                $write($value, $writer);
+                return $writer->toBytes();
+            },
+            $validate ?? function ($value): void {
+            },
+            function (): ?int {
+                return null;
             }
         );
     }

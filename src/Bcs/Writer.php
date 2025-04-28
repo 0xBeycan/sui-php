@@ -10,7 +10,8 @@ namespace Sui\Bcs;
  */
 class Writer
 {
-    private string $buffer;
+    /** @var array<int> Array of bytes representing the buffer */
+    private array $bytes;
     private int $bytePosition = 0;
     private int $size;
     private int $maxSize;
@@ -26,7 +27,7 @@ class Writer
         $this->size = $options['initialSize'] ?? 1024;
         $this->maxSize = $options['maxSize'] ?? PHP_INT_MAX;
         $this->allocateSize = $options['allocateSize'] ?? 1024;
-        $this->buffer = str_repeat("\0", $this->size);
+        $this->bytes = array_fill(0, $this->size, 0);
     }
 
     /**
@@ -50,7 +51,7 @@ class Writer
             }
 
             $this->size = $nextSize;
-            $this->buffer = str_pad($this->buffer, $this->size, "\0");
+            $this->bytes = array_pad($this->bytes, $this->size, 0);
         }
     }
 
@@ -75,7 +76,7 @@ class Writer
     public function write8(int $value): self
     {
         $this->ensureSizeOrGrow(1);
-        $this->buffer[$this->bytePosition] = chr($value);
+        $this->bytes[$this->bytePosition] = $value & 0xFF;
         return $this->shift(1);
     }
 
@@ -87,11 +88,10 @@ class Writer
      */
     public function write16(int $value): self
     {
-        $this->ensureSizeOrGrow(2);
-        $bytes = pack('v', $value); // 'v' for 16-bit unsigned little-endian
-        $this->buffer[$this->bytePosition] = $bytes[0];
-        $this->buffer[$this->bytePosition + 1] = $bytes[1];
-        return $this->shift(2);
+        for ($i = 0; $i < 2; $i++) {
+            $this->write8(($value >> ($i * 8)) & 0xFF);
+        }
+        return $this;
     }
 
     /**
@@ -102,12 +102,10 @@ class Writer
      */
     public function write32(int $value): self
     {
-        $this->ensureSizeOrGrow(4);
-        $bytes = pack('V', $value); // 'V' for 32-bit unsigned little-endian
         for ($i = 0; $i < 4; $i++) {
-            $this->buffer[$this->bytePosition + $i] = $bytes[$i];
+            $this->write8(($value >> ($i * 8)) & 0xFF);
         }
-        return $this->shift(4);
+        return $this;
     }
 
     /**
@@ -119,13 +117,12 @@ class Writer
     public function write64(int|string $value): self
     {
         $value = (string) $value;
-        $this->ensureSizeOrGrow(8);
         for ($i = 0; $i < 8; $i++) {
             $byte = bcmod($value, '256');
-            $this->buffer[$this->bytePosition + $i] = chr((int)$byte);
+            $this->write8((int) $byte);
             $value = bcdiv($value, '256');
         }
-        return $this->shift(8);
+        return $this;
     }
 
     /**
@@ -137,13 +134,12 @@ class Writer
     public function write128(int|string $value): self
     {
         $value = (string) $value;
-        $this->ensureSizeOrGrow(16);
         for ($i = 0; $i < 16; $i++) {
             $byte = bcmod($value, '256');
-            $this->buffer[$this->bytePosition + $i] = chr((int)$byte);
+            $this->write8((int) $byte);
             $value = bcdiv($value, '256');
         }
-        return $this->shift(16);
+        return $this;
     }
 
     /**
@@ -155,13 +151,12 @@ class Writer
     public function write256(int|string $value): self
     {
         $value = (string) $value;
-        $this->ensureSizeOrGrow(32);
         for ($i = 0; $i < 32; $i++) {
             $byte = bcmod($value, '256');
-            $this->buffer[$this->bytePosition + $i] = chr((int)$byte);
+            $this->write8((int) $byte);
             $value = bcdiv($value, '256');
         }
-        return $this->shift(32);
+        return $this;
     }
 
     /**
@@ -172,10 +167,14 @@ class Writer
      */
     public function writeULEB(int $value): self
     {
-        $bytes = \Sui\Utils::ulebEncode($value);
-        foreach ($bytes as $byte) {
+        do {
+            $byte = $value & 0x7f;
+            $value >>= 7;
+            if (0 !== $value) {
+                $byte |= 0x80;
+            }
             $this->write8($byte);
-        }
+        } while (0 !== $value);
         return $this;
     }
 
@@ -197,12 +196,13 @@ class Writer
     }
 
     /**
-     * Get underlying buffer taking only value bytes (in case initial buffer size was bigger).
-     * @return array<int> Resulting BCS bytes as array of integers
+     * Get the underlying buffer taking only value bytes.
+     *
+     * @return array<int>
      */
     public function toBytes(): array
     {
-        return array_values(unpack('C*', substr($this->buffer, 0, $this->bytePosition)) ?: []);
+        return array_slice($this->bytes, 0, $this->bytePosition);
     }
 
     /**

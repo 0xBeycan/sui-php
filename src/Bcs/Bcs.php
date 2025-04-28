@@ -93,7 +93,11 @@ class Bcs
             $name,
             1,
             function (Reader $reader): bool {
-                return 1 === $reader->read8();
+                $value = $reader->read8();
+                if ($value > 1) {
+                    throw new \TypeError("Invalid boolean value: {$value}");
+                }
+                return 1 === $value;
             },
             function (bool $value, Writer $writer): void {
                 $writer->write8($value ? 1 : 0);
@@ -152,24 +156,14 @@ class Bcs
             $name,
             $size,
             function (Reader $reader) use ($size): array {
-                return Utils::fromHex($reader->readBytes($size));
+                return $reader->readBytes($size);
             },
             function (array $value, Writer $writer) use ($size): void {
                 for ($i = 0; $i < $size; $i++) {
                     $writer->write8($value[$i] ?? 0);
                 }
             },
-            function (mixed $value) use ($size, $validate): void {
-                if (!is_array($value)) {
-                    throw new \TypeError("Expected array, found " . gettype($value));
-                }
-                if (count($value) !== $size) {
-                    throw new \TypeError("Expected array of length {$size}, found " . count($value));
-                }
-                if ($validate) {
-                    $validate($value);
-                }
-            }
+            $validate
         );
     }
 
@@ -182,12 +176,11 @@ class Bcs
      */
     public static function byteVector(string $name = 'bytesVector', ?\Closure $validate = null): Type
     {
-        return self::dynamicSize(
+        return Type::dynamicSize(
             $name,
             function (Reader $reader): array {
                 $length = $reader->readULEB();
-                $bytes = $reader->readBytes($length);
-                return array_values(unpack('C*', $bytes) ?: []);
+                return $reader->readBytes($length);
             },
             function (array $value, Writer $writer): void {
                 $writer->writeULEB(count($value));
@@ -195,14 +188,7 @@ class Bcs
                     $writer->write8($byte ?? 0);
                 }
             },
-            function (mixed $value) use ($validate): void {
-                if (!is_array($value)) {
-                    throw new \TypeError("Expected array, found " . gettype($value));
-                }
-                if ($validate) {
-                    $validate($value);
-                }
-            }
+            $validate
         );
     }
 
@@ -218,20 +204,19 @@ class Bcs
         return Type::stringLike(
             $name,
             function (string $value): array {
-                $bytes = unpack('C*', $value);
-                return false === $bytes ? [] : array_values($bytes);
+                return array_values(unpack('C*', $value) ?: []);
             },
             function (array $bytes): string {
-                $str = '';
-                foreach ($bytes as $byte) {
-                    if (0 === $byte) {
-                        break;
-                    }
-                    $str .= chr($byte);
-                }
-                return $str;
+                return implode(array_map('chr', $bytes));
             },
-            $validate
+            function (mixed $value) use ($validate): void {
+                if (!is_string($value)) {
+                    throw new \TypeError("Expected string, found " . gettype($value));
+                }
+                if ($validate) {
+                    $validate($value);
+                }
+            }
         );
     }
 
@@ -286,19 +271,26 @@ class Bcs
     public static function option(Type $type, string $name = null): Type
     {
         $name = $name ?? "Option<{$type->getName()}>";
-        return self::enum($name, [
-            'None' => null,
-            'Some' => $type
-        ])->transform(
+        return Type::dynamicSize(
             $name,
-            function (mixed $value): array {
-                if (null === $value) {
-                    return ['None' => true];
+            function (Reader $reader) use ($type): mixed {
+                if (0 === $reader->read8()) {
+                    return null;
                 }
-                return ['Some' => $value];
+                return $type->read($reader);
             },
-            function (array $value): mixed {
-                return 'Some' === $value['$kind'] ? $value['Some'] : null;
+            function (mixed $value, Writer $writer) use ($type): void {
+                if (null === $value) {
+                    $writer->write8(0);
+                    return;
+                }
+                $writer->write8(1);
+                $type->write($value, $writer);
+            },
+            function (mixed $value) use ($type): void {
+                if (null !== $value) {
+                    $type->validate($value);
+                }
             }
         );
     }
@@ -438,57 +430,44 @@ class Bcs
      */
     public static function enum(string $name, array $values, ?\Closure $validate = null): Type
     {
-        $canonicalOrder = array_entries($values);
-
-        return self::dynamicSize(
+        $variants = array_keys($values);
+        return Type::dynamicSize(
             $name,
-            function (Reader $reader) use ($name, $canonicalOrder): array {
-                $index = $reader->readULEB();
-                if (!isset($canonicalOrder[$index])) {
-                    throw new \TypeError("Unknown value {$index} for enum {$name}");
+            function (Reader $reader) use ($variants, $values): array {
+                $kind = $reader->readULEB();
+                if (!isset($variants[$kind])) {
+                    throw new \TypeError("Invalid variant index {$kind}");
                 }
-
-                [$kind, $type] = $canonicalOrder[$index];
-                return [
-                    $kind => $type?->read($reader) ?? true,
-                    '$kind' => $kind
-                ];
+                $variant = $variants[$kind];
+                $type = $values[$variant];
+                $value = null !== $type ? $type->read($reader) : null;
+                return ['$kind' => $variant, $variant => $value];
             },
-            function (array $value, Writer $writer) use ($canonicalOrder, $values): void {
-                $entry = array_filter(
-                    array_entries($value),
-                    fn($entry) => array_key_exists($entry[0], $values)
-                )[0];
-
-                foreach ($canonicalOrder as $i => [$optionName, $optionType]) {
-                    if ($optionName === $entry[0]) {
-                        $writer->writeULEB($i);
-                        $optionType?->write($entry[1], $writer);
-                        return;
-                    }
+            function (array $value, Writer $writer) use ($variants, $values): void {
+                if (!isset($value['$kind'])) {
+                    throw new \TypeError("Expected array with \$kind key");
+                }
+                $variant = $value['$kind'];
+                $kind = array_search($variant, $variants, true);
+                if (false === $kind) {
+                    throw new \TypeError("Invalid variant {$variant}");
+                }
+                $writer->writeULEB($kind);
+                $type = $values[$variant];
+                if (null !== $type && isset($value[$variant])) {
+                    $type->write($value[$variant], $writer);
                 }
             },
-            function (mixed $value) use ($name, $values, $validate): void {
+            function (mixed $value) use ($variants, $validate): void {
                 if (!is_array($value)) {
                     throw new \TypeError("Expected array, found " . gettype($value));
                 }
-
-                $keys = array_filter(
-                    array_keys($value),
-                    fn($k) => null !== $value[$k] && array_key_exists($k, $values)
-                );
-
-                if (1 === count($keys)) {
-                    throw new \TypeError(
-                        "Expected array with one key, but found " . count($keys) . " for type {$name}"
-                    );
+                if (!isset($value['$kind'])) {
+                    throw new \TypeError("Expected array with \$kind key");
                 }
-
-                $variant = $keys[0];
-                if (!array_key_exists($variant, $values)) {
-                    throw new \TypeError("Invalid enum variant {$variant}");
+                if (!in_array($value['$kind'], $variants, true)) {
+                    throw new \TypeError("Invalid variant {$value['$kind']}");
                 }
-
                 if ($validate) {
                     $validate($value);
                 }
@@ -552,12 +531,14 @@ class Bcs
             $name,
             $read,
             $write,
-            $validate,
-            function (): int {
-                return 0;
+            function ($value, $options) use ($write): array {
+                $writer = new Writer($options ?? []);
+                $write($value, $writer);
+                return $writer->toBytes();
             },
-            function (): int {
-                return 0;
+            $validate,
+            function (): ?int {
+                return null;
             }
         );
     }

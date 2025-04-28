@@ -19,6 +19,9 @@ class Reader
      */
     public function __construct(string $data)
     {
+        if (str_starts_with($data, '0x')) {
+            $data = substr($data, 2);
+        }
         $this->data = $data;
     }
 
@@ -73,12 +76,17 @@ class Reader
      */
     public function read64(): string
     {
-        $bytes = $this->readBytes(8);
+        $bytes = [];
+        $hexString = substr($this->data, $this->bytePosition * 2, 16);
+        for ($i = 0; $i < 16; $i += 2) {
+            $bytes[] = hexdec(substr($hexString, $i, 2));
+        }
+        $this->shift(8);
+
         $value = '0';
         for ($i = 7; $i >= 0; $i--) {
-            $byte = hexdec(substr($bytes, $i * 2, 2));
             $value = bcmul($value, '256');
-            $value = bcadd($value, (string)$byte);
+            $value = bcadd($value, (string)$bytes[$i]);
         }
         return $value;
     }
@@ -92,7 +100,6 @@ class Reader
         $value1 = $this->read64();
         $value2 = $this->read64();
         $result = $this->decToHex($value2) . str_pad($this->decToHex($value1), 16, '0', STR_PAD_LEFT);
-
         return $this->hexToDec($result);
     }
 
@@ -105,20 +112,26 @@ class Reader
         $value1 = $this->read128();
         $value2 = $this->read128();
         $result = $this->decToHex($value2) . str_pad($this->decToHex($value1), 32, '0', STR_PAD_LEFT);
-
         return $this->hexToDec($result);
     }
 
     /**
      * Read `num` number of bytes from the buffer and shift cursor by `num`.
      * @param int $num Number of bytes to read
-     * @return string
+     * @return array<int> Array of the resulting values
      */
-    public function readBytes(int $num): string
+    public function readBytes(int $num): array
     {
-        $value = substr($this->data, $this->bytePosition * 2, $num * 2);
+        $bytes = [];
+        $hexString = substr($this->data, $this->bytePosition * 2, $num * 2);
+        if (false === $hexString) {
+            return array_fill(0, $num, 0);
+        }
+        for ($i = 0; $i < strlen($hexString); $i += 2) {
+            $bytes[] = hexdec(substr($hexString, $i, 2));
+        }
         $this->shift($num);
-        return $value;
+        return $bytes;
     }
 
     /**
@@ -128,28 +141,22 @@ class Reader
      */
     public function readULEB(): int
     {
-        $bytes = array_values(unpack('C*', substr($this->data, $this->bytePosition * 2)) ?: []);
-        $result = \Sui\Utils::ulebDecode($bytes);
-        $this->shift($result['length']);
-        return $result['value'];
-    }
+        $value = 0;
+        $shift = 0;
+        $length = 0;
 
-    /**
-     * Read a BCS vector: read a length and then apply function `cb` X times
-     * where X is the length of the vector, defined as ULEB in BCS bytes.
-     * @param callable $cb Callback to process elements of vector
-     * @return array<mixed> Array of the resulting values, returned by callback
-     */
-    public function readVec(callable $cb): array
-    {
-        $length = $this->readULEB();
-        $result = [];
-
-        for ($i = 0; $i < $length; $i++) {
-            $result[] = $cb($this, $i, $length);
+        while (true) {
+            $byte = hexdec(substr($this->data, ($this->bytePosition + $length) * 2, 2));
+            $length++;
+            $value |= ($byte & 0x7f) << $shift;
+            if (0 === ($byte & 0x80)) {
+                break;
+            }
+            $shift += 7;
         }
 
-        return $result;
+        $this->shift($length);
+        return $value;
     }
 
     /**

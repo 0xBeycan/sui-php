@@ -336,16 +336,17 @@ class Utils
     public static function fromHex(string $value): array
     {
         $normalized = str_starts_with($value, '0x') ? substr($value, 2) : $value;
-        $padded = 0 === strlen($normalized) % 2 ? $normalized : '0' . $normalized;
+        if (0 !== strlen($normalized) % 2) {
+            $normalized = '0' . $normalized;
+        }
+        if (!preg_match('/^[0-9a-fA-F]+$/', $normalized)) {
+            throw new \Exception('Invalid hex string');
+        }
         $intArr = [];
-        preg_match_all('/[0-9a-fA-F]{2}/', $padded, $matches);
-        foreach ($matches[0] as $byte) {
-            $intArr[] = hexdec($byte);
+        for ($i = 0; $i < strlen($normalized); $i += 2) {
+            $intArr[] = hexdec(substr($normalized, $i, 2));
         }
-        if (count($intArr) !== strlen($padded) / 2) {
-            throw new \Exception(sprintf('Invalid hex string %s', $value));
-        }
-        return array_map('intval', array_values($intArr));
+        return $intArr;
     }
 
     /**

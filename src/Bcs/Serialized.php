@@ -49,13 +49,10 @@ class Serialized
     /**
      * Converts the bytes to a base58 string
      * @return string The base58 representation of the bytes
-     * @throws \RuntimeException When base58 conversion is not implemented
      */
     public function toBase58(): string
     {
-        // Note: You'll need to implement or use a base58 library
-        // This is a placeholder for the base58 conversion
-        throw new \RuntimeException('Base58 conversion not implemented');
+        return \Sui\Utils::toBase58($this->bytes);
     }
 
     /**
