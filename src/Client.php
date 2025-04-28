@@ -88,7 +88,7 @@ class Client
 
         if (isset($result['error'])) {
             throw new Exception(
-                'Error: ' . $result['error']['message'] ?? 'Unknown error',
+                'Error: ' . $result['error']['message'],
                 $result['error']['code'] ?? 0
             );
         }
@@ -354,10 +354,10 @@ class Client
 
     /**
      * @param string $digest
-     * @param array<mixed> $options
+     * @param array<mixed>|null $options
      * @return TransactionBlock
      */
-    public function getTransactionBlock(string $digest, array $options = []): TransactionBlock
+    public function getTransactionBlock(string $digest, ?array $options = null): TransactionBlock
     {
         return new TransactionBlock($this->request('sui_getTransactionBlock', [
             $digest,
@@ -367,10 +367,10 @@ class Client
 
     /**
      * @param array<string> $digests
-     * @param array<mixed> $options
+     * @param array<mixed>|null $options
      * @return array<TransactionBlock>
      */
-    public function multiGetTransactionBlocks(array $digests, array $options = []): array
+    public function multiGetTransactionBlocks(array $digests, ?array $options = null): array
     {
         return array_map(
             fn(array $item) => new TransactionBlock($item),
@@ -459,27 +459,27 @@ class Client
      * @param string|null $sender
      * @return string
      */
-    private function transactionBlocToBase64(
+    private function transactionBlockToBase64(
         string|array|Transaction $transactionBlock,
         ?string $sender = null
     ): string {
-        $devInspectTxBytes = $transactionBlock;
-
         if ($transactionBlock instanceof Transaction) {
             if (!$sender) {
                 throw new Exception('Sender is required when using Transaction instance');
             }
-            $transactionBlock->setSenderIfNotSet($sender);
+            $transactionBlock->data->setSenderIfNotSet($sender);
             $buildedTx = $transactionBlock->build([
                 'client' => $this,
                 'onlyTransactionKind' => true
             ]);
-            $devInspectTxBytes = base64_encode(serialize($buildedTx));
+            return base64_encode(serialize($buildedTx));
         } elseif (is_array($transactionBlock)) {
-            $devInspectTxBytes = base64_encode(serialize($transactionBlock));
+            return base64_encode(serialize($transactionBlock));
+        } elseif (is_string($transactionBlock)) {
+            return $transactionBlock;
+        } else {
+            throw new Exception('Invalid transaction block');
         }
-
-        return $devInspectTxBytes;
     }
 
     /**
@@ -497,7 +497,7 @@ class Client
     ): DevInspectResults {
         return new DevInspectResults($this->request('sui_devInspectTransactionBlock', [
             $sender,
-            $this->transactionBlocToBase64($transactionBlock, $sender),
+            $this->transactionBlockToBase64($transactionBlock, $sender),
             $gasPrice ? (string) $gasPrice : null,
             $epoch
         ]));
@@ -513,7 +513,7 @@ class Client
         ?string $sender = null
     ): DryRunTransactionBlock {
         return new DryRunTransactionBlock($this->request('sui_dryRunTransactionBlock', [
-            $this->transactionBlocToBase64($transactionBlock, $sender),
+            $this->transactionBlockToBase64($transactionBlock, $sender),
         ]));
     }
 
@@ -675,7 +675,7 @@ class Client
                 $remainingTimeout = $timeout - $elapsed;
                 $sleepTime = min($pollInterval, $remainingTimeout);
                 if ($sleepTime > 0) {
-                    usleep($sleepTime * 1000);
+                    usleep((int) ($sleepTime * 1000));
                 }
             }
         }

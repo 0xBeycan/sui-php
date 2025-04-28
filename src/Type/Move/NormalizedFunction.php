@@ -19,7 +19,7 @@ class NormalizedFunction
     public array $return;
 
     /**
-     * @var array<string,AbilitySet>
+     * @var array<string,array<mixed>>
      */
     public array $typeParameters;
 
@@ -40,7 +40,7 @@ class NormalizedFunction
             $data['return']
         );
         $this->typeParameters = array_map(
-            fn(array $typeParameter) => new AbilitySet($typeParameter),
+            fn(array $typeParameter) => $typeParameter,
             $data['typeParameters']
         );
         $this->visibility = (string) ($data['visibility'] ?? '');

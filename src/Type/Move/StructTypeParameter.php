@@ -6,7 +6,10 @@ namespace Sui\Type\Move;
 
 class StructTypeParameter
 {
-    public AbilitySet $constraints;
+    /**
+     * @var array<mixed>
+     */
+    public array $constraints;
 
     public bool $isPhantom;
 
@@ -15,7 +18,7 @@ class StructTypeParameter
      */
     public function __construct(array $data)
     {
-        $this->constraints = new AbilitySet($data['constraints'] ?? []);
+        $this->constraints = $data['constraints'] ?? [];
         $this->isPhantom = (bool) ($data['isPhantom'] ?? false);
     }
 }

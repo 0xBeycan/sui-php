@@ -6,7 +6,7 @@ namespace Sui\Type;
 
 class SuiArgument
 {
-    public ?string $key;
+    public string|int|null $key;
 
     public string|float $value;
 

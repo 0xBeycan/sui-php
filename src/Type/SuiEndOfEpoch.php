@@ -6,7 +6,7 @@ namespace Sui\Type;
 
 class SuiEndOfEpoch
 {
-    public ?string $key;
+    public string|int|null $key;
 
     public mixed $value;
 

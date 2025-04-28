@@ -6,7 +6,7 @@ namespace Sui\Type\Move;
 
 class NormalizedType
 {
-    public ?string $key;
+    public string|int|null $key;
 
     public string|Struct|float|NormalizedType $value;
 

@@ -143,9 +143,9 @@ class Utils
 
     /**
      * @param string $value
-     * @return int
+     * @return int|float
      */
-    public static function getHexByteLength(string $value): int
+    public static function getHexByteLength(string $value): int|float
     {
         return preg_match('/^(0x|0X)/', $value) ? (strlen($value) - 2) / 2 : strlen($value) / 2;
     }
@@ -194,11 +194,11 @@ class Utils
 
     /**
      * @param string $value
-     * @return object
+     * @return object{address:string,module:string,name:string}
      */
     public static function parseStructTag(string $value): object
     {
-        $address = substr($value, 0, strpos($value, '::'));
+        $address = substr($value, 0, strpos($value, '::') ?: 0);
         $module = substr(
             $value,
             strpos($value, '::') + 2,
@@ -248,9 +248,9 @@ class Utils
             return false;
         }
         if (str_contains($value, '@')) {
-            return preg_match(self::SUI_NS_NAME_REGEX, $value);
+            return (bool) preg_match(self::SUI_NS_NAME_REGEX, $value);
         }
-        return preg_match(self::SUI_NS_DOMAIN_REGEX, $value);
+        return (bool)preg_match(self::SUI_NS_DOMAIN_REGEX, $value);
     }
 
 
@@ -293,7 +293,7 @@ class Utils
             return false;
         }
         [$org, $app, $version] = $parts;
-        if (isset($version) && !preg_match(self::VERSION_REGEX, $version)) {
+        if ($version && !preg_match(self::VERSION_REGEX, $version)) {
             return false;
         }
         if (!self::isValidSuiNSName($org)) {
@@ -309,6 +309,9 @@ class Utils
     public static function isValidNamedType(string $type): bool
     {
         $splitType = preg_split('/::|<|>|,/', $type);
+        if (!is_array($splitType)) {
+            return false;
+        }
         foreach ($splitType as $t) {
             if (str_contains($t, self::NAME_SEPARATOR) && !self::isValidNamedPackage($t)) {
                 return false;
@@ -319,7 +322,7 @@ class Utils
 
     /**
      * @param string $value
-     * @return array<int>
+     * @return array<int|float>
      */
     public static function fromHex(string $value): array
     {

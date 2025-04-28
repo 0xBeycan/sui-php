@@ -27,10 +27,11 @@ abstract class PaginatedBase
 
     /**
      * @param array<mixed> $data
-     * @return self
+     * @return static
      */
-    public static function fromArray(array $data): self
+    public static function fromArray(array $data): static
     {
+        // @phpstan-ignore-next-line
         $instance = new static();
 
         $instance->nextCursor = $data['nextCursor'] ?? null;

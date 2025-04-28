@@ -7,12 +7,12 @@ namespace Sui\Type;
 class SuiExecutionResult
 {
     /**
-     * @var array<SuiArgument,int[],string>|null
+     * @var array<mixed>|null
      */
     public ?array $mutableReferenceOutputs = [];
 
     /**
-     * @var array<int[],string>|null
+     * @var array<mixed>|null
      */
     public ?array $returnValues = null;
 

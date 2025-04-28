@@ -10,4 +10,12 @@ class ECMHLiveObjectSetDigest
      * @var array<int>
      */
     public array $digest;
+
+    /**
+     * @param array<mixed> $digest
+     */
+    public function __construct(array $digest)
+    {
+        $this->digest = $digest;
+    }
 }
