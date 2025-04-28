@@ -53,7 +53,7 @@ class Bcs
      */
     public static function u64(string $name = 'u64', ?\Closure $validate = null): Type
     {
-        return Type::bigUInt($name, 8, 'read64', 'write64', (string)(2 ** 64 - 1), $validate);
+        return Type::bigUInt($name, 8, 'read64', 'write64', '18446744073709551615', $validate);
     }
 
     /**
@@ -218,19 +218,20 @@ class Bcs
         return Type::stringLike(
             $name,
             function (string $value): array {
-                return array_values(unpack('C*', $value) ?: []);
+                $bytes = unpack('C*', $value);
+                return false === $bytes ? [] : array_values($bytes);
             },
             function (array $bytes): string {
-                return implode(array_map('chr', $bytes));
+                $str = '';
+                foreach ($bytes as $byte) {
+                    if (0 === $byte) {
+                        break;
+                    }
+                    $str .= chr($byte);
+                }
+                return $str;
             },
-            function (mixed $value) use ($validate): void {
-                if (!is_string($value)) {
-                    throw new \TypeError("Expected string, found " . gettype($value));
-                }
-                if ($validate) {
-                    $validate($value);
-                }
-            }
+            $validate
         );
     }
 
@@ -391,11 +392,9 @@ class Bcs
     public static function struct(string $name, array $fields, ?\Closure $validate = null): Type
     {
         $canonicalOrder = array_entries($fields);
-        $size = array_sum(array_map(fn($t) => $t->serializedSize([]), $fields));
 
-        return Type::fixedSize(
+        return new Type(
             $name,
-            $size,
             function (Reader $reader) use ($canonicalOrder): array {
                 $result = [];
                 foreach ($canonicalOrder as [$field, $type]) {
@@ -408,6 +407,13 @@ class Bcs
                     $type->write($value[$field], $writer);
                 }
             },
+            function ($value, $options) use ($canonicalOrder): array {
+                $writer = new Writer($options);
+                foreach ($canonicalOrder as [$field, $type]) {
+                    $type->write($value[$field], $writer);
+                }
+                return $writer->toBytes();
+            },
             function (mixed $value) use ($validate): void {
                 if (!is_array($value)) {
                     throw new \TypeError("Expected array, found " . gettype($value));
@@ -415,6 +421,9 @@ class Bcs
                 if ($validate) {
                     $validate($value);
                 }
+            },
+            function (mixed $value): ?int {
+                return null; // Dynamic size for structs with dynamic fields
             }
         );
     }

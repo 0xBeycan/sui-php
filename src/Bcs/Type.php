@@ -80,7 +80,8 @@ class Type
     {
         $this->validate($value);
         $bytes = ($this->serialize)($value, $options);
-        return new Serialized($this, $bytes);
+        $byteString = pack('C*', ...$bytes);
+        return new Serialized($this, $byteString);
     }
 
     /**
@@ -126,7 +127,8 @@ class Type
         if (false === $bytes) {
             throw new \TypeError('Invalid base64 string');
         }
-        return $this->parse(array_values(unpack('C*', $bytes) ?: []));
+        $byteArray = array_values(unpack('C*', $bytes));
+        return $this->parse($byteArray);
     }
 
     /**
@@ -251,7 +253,7 @@ class Type
             },
             function ($value) use ($name, $maxValue, $validate): void {
                 $value = is_string($value) ? $value : (string)$value;
-                if (bccomp($value, '0') < 0 || bccomp($value, $maxValue) > 0) {
+                if (bccomp($value, '0') < 0 || bccomp($value, (string)$maxValue) > 0) {
                     throw new \TypeError(
                         "Invalid {$name} value: {$value}. Expected value in range 0-{$maxValue}"
                     );
@@ -282,7 +284,8 @@ class Type
             function (Reader $reader) use ($fromBytes): string {
                 $length = $reader->readULEB();
                 $bytes = $reader->readBytes($length);
-                return $fromBytes($bytes);
+                $bytesArray = array_values(unpack('C*', hex2bin($bytes)) ?: []);
+                return $fromBytes($bytesArray);
             },
             function ($value, Writer $writer) use ($toBytes): void {
                 $bytes = $toBytes($value);
@@ -294,19 +297,15 @@ class Type
             function ($value, $options) use ($toBytes): array {
                 $bytes = $toBytes($value);
                 $size = Utils::ulebEncode(count($bytes));
-                $result = array_merge($size, $bytes);
-                return $result;
+                return array_merge($size, $bytes);
             },
-            function ($value) use ($name, $validate): void {
+            $validate ?? function (mixed $value): void {
                 if (!is_string($value)) {
-                    throw new \TypeError("Invalid {$name} value: {$value}. Expected string");
-                }
-                if ($validate) {
-                    $validate($value);
+                    throw new \TypeError("Expected string, found " . gettype($value));
                 }
             },
-            function ($value): ?int {
-                return null;
+            function (mixed $value) use ($toBytes): ?int {
+                return null; // Dynamic size
             }
         );
     }

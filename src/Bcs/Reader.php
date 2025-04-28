@@ -73,11 +73,14 @@ class Reader
      */
     public function read64(): string
     {
-        $value1 = $this->read32();
-        $value2 = $this->read32();
-
-        $result = dechex($value2) . str_pad(dechex($value1), 8, '0', STR_PAD_LEFT);
-        return $this->hexToDec($result);
+        $bytes = $this->readBytes(8);
+        $value = '0';
+        for ($i = 7; $i >= 0; $i--) {
+            $byte = hexdec(substr($bytes, $i * 2, 2));
+            $value = bcmul($value, '256');
+            $value = bcadd($value, (string)$byte);
+        }
+        return $value;
     }
 
     /**
