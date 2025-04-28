@@ -10,7 +10,6 @@ Key features:
 - Transaction building and signing
 - Account management
 
-
 ## Installation
 
 ```bash
@@ -42,4 +41,7 @@ $expected = [
 
 $serialized = $coin->serialize($expected, ['initialSize' => 1, 'maxSize' => 1024]);
 $parsed = $coin->fromBase64($rustBcs);
+
+var_dump($expected, $parsed);
+var_dump($rustBcs, $serialized->toBase64());
 ```
