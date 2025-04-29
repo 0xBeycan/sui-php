@@ -56,7 +56,7 @@ class Reader
         }
         $value = hexdec(substr($this->data, $this->bytePosition * 2, 2));
         $this->shift(1);
-        return $value;
+        return (int) $value;
     }
 
     /**

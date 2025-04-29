@@ -331,7 +331,7 @@ class Utils
 
     /**
      * @param string $value
-     * @return array<int>
+     * @return array<int<0,max>,float|int>
      */
     public static function fromHex(string $value): array
     {
