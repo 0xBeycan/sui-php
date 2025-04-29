@@ -6,10 +6,6 @@ namespace Sui\Bcs;
 
 use Sui\Utils;
 
-/**
- * @template T
- * @template Input of T
- */
 class Type
 {
     private string $name;
@@ -55,7 +51,7 @@ class Type
     /**
      * Read the type from a reader
      * @param Reader $reader The reader to read from
-     * @return T The read value
+     * @return mixed The read value
      */
     public function read(Reader $reader): mixed
     {
@@ -95,8 +91,8 @@ class Type
 
     /**
      * Parse bytes into a value
-     * @param array<int>|string $bytes The bytes to parse
-     * @return T The parsed value
+     * @param array<mixed>|string $bytes The bytes to parse
+     * @return mixed The parsed value
      */
     public function parse(array|string $bytes): mixed
     {
@@ -122,7 +118,7 @@ class Type
     /**
      * Parse a hex string into a value
      * @param string $hex The hex string to parse
-     * @return T The parsed value
+     * @return mixed The parsed value
      */
     public function fromHex(string $hex): mixed
     {
@@ -132,7 +128,7 @@ class Type
     /**
      * Parse a base58 string into a value
      * @param string $base58 The base58 string to parse
-     * @return T The parsed value
+     * @return mixed The parsed value
      */
     public function fromBase58(string $base58): mixed
     {
@@ -142,7 +138,7 @@ class Type
     /**
      * Parse a base64 string into a value
      * @param string $base64 The base64 string to parse
-     * @return T The parsed value
+     * @return mixed The parsed value
      */
     public function fromBase64(string $base64): mixed
     {
@@ -150,7 +146,7 @@ class Type
         if (false === $bytes) {
             throw new \TypeError('Invalid base64 string');
         }
-        $byteArray = array_values(unpack('C*', $bytes));
+        $byteArray = array_values(unpack('C*', $bytes) ?: []);
         return $this->parse($byteArray);
     }
 
@@ -186,14 +182,12 @@ class Type
 
     /**
      * Create a fixed size type
-     * @template T2
-     * @template Input2 of T2
      * @param string $name The name of the type
      * @param int $size The fixed size
      * @param \Closure $read Function to read the type
      * @param \Closure $write Function to write the type
      * @param \Closure|null $validate Optional validation function
-     * @return self<T2,Input2> The created type
+     * @return self The created type
      */
     public static function fixedSize(
         string $name,
@@ -211,8 +205,7 @@ class Type
                 $write($value, $writer);
                 return $writer->toBytes();
             },
-            $validate ?? function (): void {
-            },
+            $validate ?? function (): void {}, // @phpcs:ignore
             function () use ($size): int {
                 return $size;
             }
@@ -227,7 +220,7 @@ class Type
      * @param string $writeMethod The writer method name
      * @param int $maxValue The maximum value
      * @param \Closure|null $validate Optional validation function
-     * @return self<int,int> The created type
+     * @return self The created type
      */
     public static function uInt(
         string $name,
@@ -267,7 +260,7 @@ class Type
      * @param string $writeMethod The writer method name
      * @param string $maxValue The maximum value
      * @param \Closure|null $validate Optional validation function
-     * @return self<string,string|int|float> The created type
+     * @return self The created type
      */
     public static function bigUInt(
         string $name,
@@ -307,7 +300,7 @@ class Type
      * @param \Closure $toBytes Function to convert to bytes
      * @param \Closure $fromBytes Function to convert from bytes
      * @param \Closure|null $validate Optional validation function
-     * @return self<string,string> The created type
+     * @return self The created type
      */
     public static function stringLike(
         string $name,
@@ -333,10 +326,8 @@ class Type
 
     /**
      * Create a lazy type
-     * @template T2
-     * @template Input2 of T2
      * @param \Closure $cb Function to create the type
-     * @return self<T2,Input2> The created type
+     * @return self The created type
      */
     public static function lazy(\Closure $cb): self
     {
@@ -372,7 +363,7 @@ class Type
     /**
      * Create a new type that transforms values during serialization and deserialization
      *
-     * @param string|null $name Optional name for the new type
+     * @param string $name Optional name for the new type
      * @param \Closure|null $input Optional function to transform input values
      * @param \Closure|null $output Optional function to transform output values
      * @param \Closure|null $validate Optional function to validate values
@@ -420,13 +411,11 @@ class Type
 
     /**
      * Create a dynamic size type
-     * @template T2
-     * @template Input2 of T2
      * @param string $name The name of the type
      * @param \Closure $read Function to read the type
      * @param \Closure $write Function to write the type
      * @param \Closure|null $validate Optional validation function
-     * @return self<T2,Input2> The created type
+     * @return self The created type
      */
     public static function dynamicSize(string $name, \Closure $read, \Closure $write, ?\Closure $validate = null): self
     {
@@ -439,8 +428,7 @@ class Type
                 $write($value, $writer);
                 return $writer->toBytes();
             },
-            $validate ?? function (): void {
-            },
+            $validate ?? function (): void {},// @phpcs:ignore
             function (): ?int {
                 return null;
             }

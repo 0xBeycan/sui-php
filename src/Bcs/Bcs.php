@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Sui\Bcs;
 
-use Sui\Utils;
-
 class Bcs
 {
     /**
      * Creates a Type that can be used to read and write an 8-bit unsigned integer.
      *
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<int,int> The created Type instance
+     * @return Type The created Type instance
      */
     public static function u8(array $options = []): Type
     {
@@ -30,7 +28,7 @@ class Bcs
      * Creates a Type that can be used to read and write a 16-bit unsigned integer.
      *
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<int,int> The created Type instance
+     * @return Type The created Type instance
      */
     public static function u16(array $options = []): Type
     {
@@ -48,7 +46,7 @@ class Bcs
      * Creates a Type that can be used to read and write a 32-bit unsigned integer.
      *
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<int,int> The created Type instance
+     * @return Type The created Type instance
      */
     public static function u32(array $options = []): Type
     {
@@ -66,7 +64,7 @@ class Bcs
      * Creates a Type that can be used to read and write a 64-bit unsigned integer.
      *
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<string,int|string> The created Type instance
+     * @return Type The created Type instance
      */
     public static function u64(array $options = []): Type
     {
@@ -84,7 +82,7 @@ class Bcs
      * Creates a Type that can be used to read and write a 128-bit unsigned integer.
      *
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<string,int|string> The created Type instance
+     * @return Type The created Type instance
      */
     public static function u128(array $options = []): Type
     {
@@ -102,7 +100,7 @@ class Bcs
      * Creates a Type that can be used to read and write a 256-bit unsigned integer.
      *
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<string,int|string> The created Type instance
+     * @return Type The created Type instance
      */
     public static function u256(array $options = []): Type
     {
@@ -120,7 +118,7 @@ class Bcs
      * Creates a Type that can be used to read and write boolean values.
      *
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<bool,bool> The created Type instance
+     * @return Type The created Type instance
      */
     public static function bool(array $options = []): Type
     {
@@ -152,7 +150,7 @@ class Bcs
      * Creates a Type that can be used to read and write unsigned LEB encoded integers
      *
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<int,int> The created Type instance
+     * @return Type The created Type instance
      */
     public static function uleb128(array $options = []): Type
     {
@@ -180,7 +178,7 @@ class Bcs
      *
      * @param int $size The number of bytes this type represents
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<array<int>,array<int>> The created Type instance
+     * @return Type The created Type instance
      */
     public static function bytes(int $size, array $options = []): Type
     {
@@ -214,7 +212,7 @@ class Bcs
      * Creates a Type representing a variable length byte array
      *
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<array<int>,array<int>> The created Type instance
+     * @return Type The created Type instance
      */
     public static function byteVector(array $options = []): Type
     {
@@ -243,7 +241,7 @@ class Bcs
      * Creates a Type that can ser/de string values. Strings will be UTF-8 encoded
      *
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<string,string> The created Type instance
+     * @return Type The created Type instance
      */
     public static function string(array $options = []): Type
     {
@@ -272,7 +270,7 @@ class Bcs
      * @param int $size The number of elements in the array
      * @param Type $type The Type of each element in the array
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<array<mixed>,array<mixed>> The created Type instance
+     * @return Type The created Type instance
      */
     public static function fixedArray(int $size, Type $type, array $options = []): Type
     {
@@ -310,7 +308,7 @@ class Bcs
      * Creates a Type representing an optional value
      *
      * @param Type $type The Type of the optional value
-     * @return Type<mixed,mixed> The created Type instance
+     * @return Type The created Type instance
      */
     public static function option(Type $type): Type
     {
@@ -344,7 +342,7 @@ class Bcs
      *
      * @param Type $type The Type of each element in the vector
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<array<mixed>,array<mixed>> The created Type instance
+     * @return Type The created Type instance
      */
     public static function vector(Type $type, array $options = []): Type
     {
@@ -380,7 +378,7 @@ class Bcs
      *
      * @param array<Type> $types The Types for each element in the tuple
      * @param array{name?: string, validate?: \Closure} $options Optional options
-     * @return Type<array<mixed>,array<mixed>> The created Type instance
+     * @return Type The created Type instance
      */
     public static function tuple(array $types, array $options = []): Type
     {
@@ -420,7 +418,7 @@ class Bcs
      * @param string $name The name of the struct
      * @param array<string,Type> $fields The fields of the struct
      * @param array{validate?: \Closure} $options Optional options
-     * @return Type<array<string,mixed>,array<string,mixed>> The created Type instance
+     * @return Type The created Type instance
      */
     public static function struct(string $name, array $fields, array $options = []): Type
     {
@@ -467,7 +465,7 @@ class Bcs
      * @param string $name The name of the enum
      * @param array<string,Type|null> $variants The variants of the enum
      * @param array{validate?: \Closure} $options Optional options
-     * @return Type<array<string,mixed>,array<string,mixed>> The created Type instance
+     * @return Type The created Type instance
      */
     public static function enum(string $name, array $variants, array $options = []): Type
     {
@@ -529,7 +527,7 @@ class Bcs
      *
      * @param Type $keyType The Type of the key
      * @param Type $valueType The Type of the value
-     * @return Type<array<mixed,mixed>,array<mixed,mixed>> The created Type instance
+     * @return Type The created Type instance
      */
     public static function map(Type $keyType, Type $valueType): Type
     {
