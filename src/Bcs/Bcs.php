@@ -226,9 +226,7 @@ class Bcs
             },
             function (array $value, Writer $writer): void {
                 $writer->writeULEB(count($value));
-                foreach ($value as $byte) {
-                    $writer->write8($byte ?? 0);
-                }
+                $writer->writeBytes($value);
             },
             function (mixed $value) use ($options): void {
                 if (!is_array($value)) {
@@ -316,22 +314,27 @@ class Bcs
      */
     public static function option(Type $type): Type
     {
-        return self::enum("Option<{$type->getName()}>", [
-            'None' => null,
-            'Some' => $type,
-        ])->transform(
-            null,
-            function (mixed $value): array {
-                if (null === $value) {
-                    return ['None' => true];
+        return Type::dynamicSize(
+            "option<{$type->getName()}>",
+            function (Reader $reader) use ($type): mixed {
+                $hasValue = 1 === $reader->read8();
+                if (!$hasValue) {
+                    return null;
                 }
-                return ['Some' => $value];
+                return $type->read($reader);
             },
-            function (array $value): mixed {
-                if (isset($value['Some'])) {
-                    return $value['Some'];
+            function (mixed $value, Writer $writer) use ($type): void {
+                if (null === $value) {
+                    $writer->write8(0);
+                    return;
                 }
-                return null;
+                $writer->write8(1);
+                $type->write($value, $writer);
+            },
+            function (mixed $value): void {
+                if (null !== $value && !is_scalar($value) && !is_array($value)) {
+                    throw new \TypeError("Expected scalar, array or null, found " . gettype($value));
+                }
             }
         );
     }
@@ -346,7 +349,7 @@ class Bcs
     public static function vector(Type $type, array $options = []): Type
     {
         return Type::dynamicSize(
-            $options['name'] ?? "vector<{$type->getName()}>",
+            $options['name'] ?? 'vector',
             function (Reader $reader) use ($type): array {
                 $length = $reader->readULEB();
                 $result = [];
@@ -504,7 +507,9 @@ class Bcs
 
                 $keys = array_filter(array_keys($value), fn($k) => '$kind' !== $k && null !== ($value[$k] ?? null));
                 if (1 !== count($keys)) {
-                    throw new \TypeError("Expected object with one key, but found " . count($keys) . " for type {$name}");
+                    throw new \TypeError(
+                        "Expected object with one key, but found " . count($keys) . " for type {$name}"
+                    );
                 }
 
                 $variant = $keys[0];

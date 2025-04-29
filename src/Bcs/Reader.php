@@ -25,6 +25,9 @@ class Reader
             if (str_starts_with($data, '0x')) {
                 $data = substr($data, 2);
             }
+            if (!ctype_xdigit($data)) {
+                $data = implode(array_map(fn($b) => str_pad(dechex(ord($b)), 2, '0', STR_PAD_LEFT), str_split($data)));
+            }
             $this->data = $data;
         }
     }
@@ -44,29 +47,32 @@ class Reader
     /**
      * Read U8 value from the buffer and shift cursor by 1.
      * @return int
+     * @throws \TypeError If trying to read past the end of the buffer
      */
     public function read8(): int
     {
         if ($this->bytePosition * 2 >= strlen($this->data)) {
-            return 0;
+            throw new \TypeError("Trying to read past the end of the buffer");
         }
         $value = hexdec(substr($this->data, $this->bytePosition * 2, 2));
         $this->shift(1);
-        return (int) $value;
+        return $value;
     }
 
     /**
      * Read U16 value from the buffer and shift cursor by 2.
      * @return int
+     * @throws \TypeError If trying to read past the end of the buffer
      */
     public function read16(): int
     {
-        if ($this->bytePosition * 2 >= strlen($this->data)) {
-            return 0;
+        if ($this->bytePosition * 2 + 4 > strlen($this->data)) {
+            throw new \TypeError("Trying to read past the end of the buffer");
         }
         $value = 0;
         for ($i = 0; $i < 2; $i++) {
-            $value |= $this->read8() << ($i * 8);
+            $byte = $this->read8();
+            $value |= $byte << ($i * 8);
         }
         return $value;
     }
@@ -74,15 +80,17 @@ class Reader
     /**
      * Read U32 value from the buffer and shift cursor by 4.
      * @return int
+     * @throws \TypeError If trying to read past the end of the buffer
      */
     public function read32(): int
     {
-        if ($this->bytePosition * 2 >= strlen($this->data)) {
-            return 0;
+        if ($this->bytePosition * 2 + 8 > strlen($this->data)) {
+            throw new \TypeError("Trying to read past the end of the buffer");
         }
         $value = 0;
         for ($i = 0; $i < 4; $i++) {
-            $value |= $this->read8() << ($i * 8);
+            $byte = $this->read8();
+            $value |= $byte << ($i * 8);
         }
         return $value;
     }
@@ -90,54 +98,67 @@ class Reader
     /**
      * Read U64 value from the buffer and shift cursor by 8.
      * @return string
+     * @throws \TypeError If trying to read past the end of the buffer
      */
     public function read64(): string
     {
-        if ($this->bytePosition * 2 >= strlen($this->data)) {
-            return '0';
+        if ($this->bytePosition * 2 + 16 > strlen($this->data)) {
+            throw new \TypeError("Trying to read past the end of the buffer");
         }
-        $value1 = (string)$this->read32();
-        $value2 = (string)$this->read32();
-        return bcmul(bcadd(bcmul($value2, bcpow('2', '32')), $value1), '1');
+        $value = '0';
+        for ($i = 0; $i < 8; $i++) {
+            $byte = $this->read8();
+            $value = bcadd($value, bcmul((string)$byte, bcpow('2', (string)($i * 8))));
+        }
+        return $value;
     }
 
     /**
      * Read U128 value from the buffer and shift cursor by 16.
      * @return string
+     * @throws \TypeError If trying to read past the end of the buffer
      */
     public function read128(): string
     {
-        if ($this->bytePosition * 2 >= strlen($this->data)) {
-            return '0';
+        if ($this->bytePosition * 2 + 32 > strlen($this->data)) {
+            throw new \TypeError("Trying to read past the end of the buffer");
         }
-        $value1 = $this->read64();
-        $value2 = $this->read64();
-        return bcadd(bcmul($value2, bcpow('2', '64')), $value1);
+        $value = '0';
+        for ($i = 0; $i < 16; $i++) {
+            $byte = $this->read8();
+            $value = bcadd($value, bcmul((string)$byte, bcpow('2', (string)($i * 8))));
+        }
+        return $value;
     }
 
     /**
      * Read U256 value from the buffer and shift cursor by 32.
      * @return string
+     * @throws \TypeError If trying to read past the end of the buffer
      */
     public function read256(): string
     {
-        if ($this->bytePosition * 2 >= strlen($this->data)) {
-            return '0';
+        if ($this->bytePosition * 2 + 64 > strlen($this->data)) {
+            throw new \TypeError("Trying to read past the end of the buffer");
         }
-        $value1 = $this->read128();
-        $value2 = $this->read128();
-        return bcadd(bcmul($value2, bcpow('2', '128')), $value1);
+        $value = '0';
+        for ($i = 0; $i < 32; $i++) {
+            $byte = $this->read8();
+            $value = bcadd($value, bcmul((string)$byte, bcpow('2', (string)($i * 8))));
+        }
+        return $value;
     }
 
     /**
      * Read `num` number of bytes from the buffer and shift cursor by `num`.
      * @param int $num Number of bytes to read
      * @return array<int> Array of the resulting values
+     * @throws \TypeError If trying to read past the end of the buffer
      */
     public function readBytes(int $num): array
     {
-        if ($this->bytePosition * 2 >= strlen($this->data)) {
-            return array_fill(0, $num, 0);
+        if ($this->bytePosition * 2 + ($num * 2) > strlen($this->data)) {
+            throw new \TypeError("Trying to read past the end of the buffer");
         }
         $bytes = [];
         for ($i = 0; $i < $num; $i++) {
@@ -150,6 +171,7 @@ class Reader
      * Read ULEB value - an integer of varying size. Used for enum indexes and
      * vector lengths.
      * @return int
+     * @throws \TypeError If trying to read past the end of the buffer
      */
     public function readULEB(): int
     {
@@ -158,7 +180,7 @@ class Reader
 
         while (true) {
             if ($this->bytePosition * 2 >= strlen($this->data)) {
-                break;
+                throw new \TypeError("Trying to read past the end of the buffer");
             }
             $byte = $this->read8();
             $value |= ($byte & 0x7f) << $shift;

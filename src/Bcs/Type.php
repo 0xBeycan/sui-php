@@ -283,15 +283,16 @@ class Type
             function (Reader $reader) use ($readMethod): string {
                 return $reader->$readMethod();
             },
-            function ($value, Writer $writer) use ($writeMethod): void {
-                $writer->$writeMethod($value);
+            function (mixed $value, Writer $writer) use ($writeMethod): void {
+                $writer->$writeMethod((string)$value);
             },
-            function ($value) use ($name, $maxValue, $validate): void {
-                $value = is_string($value) ? $value : (string)$value;
-                if (bccomp($value, '0') < 0 || bccomp($value, (string)$maxValue) > 0) {
-                    throw new \TypeError(
-                        "Invalid {$name} value: {$value}. Expected value in range 0-{$maxValue}"
-                    );
+            function (mixed $value) use ($name, $maxValue, $validate): void {
+                if (!is_string($value) && !is_int($value)) {
+                    throw new \TypeError("Expected string or integer, found " . gettype($value));
+                }
+                $value = (string)$value;
+                if (bccomp($value, '0') < 0 || bccomp($value, $maxValue) > 0) {
+                    throw new \TypeError("Value out of range for {$name}");
                 }
                 if ($validate) {
                     $validate($value);
@@ -371,47 +372,38 @@ class Type
     }
 
     /**
-     * Create a transformed type
-     * @template T2
-     * @template Input2 of T2
-     * @param string|null $name The name of the type
-     * @param \Closure|null $input Function to transform input
-     * @param \Closure|null $output Function to transform output
-     * @param \Closure|null $validate Optional validation function
-     * @return self<T2,Input2> The created type
+     * Create a new type that transforms values during serialization and deserialization
+     *
+     * @param string|null $name Optional name for the new type
+     * @param \Closure|null $input Optional function to transform input values
+     * @param \Closure|null $output Optional function to transform output values
+     * @param \Closure|null $validate Optional function to validate values
+     * @return self The transformed type
      */
     public function transform(
-        ?string $name = null,
+        string $name,
         ?\Closure $input = null,
         ?\Closure $output = null,
         ?\Closure $validate = null
     ): self {
-        $name = $name ?? $this->name;
-        $input = $input ?? function ($x) {
-            return $x;
-        };
-        $output = $output ?? function ($x) {
-            return $x;
-        };
-        $validate = $validate ?? $this->validate;
+        $this->name = $name;
+        $this->validate = $validate;
 
-        return new self(
-            $name,
-            function (Reader $reader) use ($output): mixed {
-                return $output($this->read($reader));
-            },
-            function (mixed $value, Writer $writer) use ($input): void {
-                $this->write($input($value), $writer);
-            },
-            function (mixed $value, array $options) use ($input): array {
-                $serialized = $this->serialize($input($value), $options);
-                return array_values(unpack('C*', $serialized->toBytes()) ?: []);
-            },
-            $validate,
-            function (mixed $value) use ($input): ?int {
-                return $this->serializedSize($input($value));
-            }
-        );
+        if ($input) {
+            $this->read = function (Reader $reader) use ($input) {
+                $value = $this->read($reader);
+                return $input($value);
+            };
+        }
+
+        if ($output) {
+            $this->write = function (mixed $value, Writer $writer) use ($output): void {
+                $transformed = $output($value);
+                $this->write($transformed, $writer);
+            };
+        }
+
+        return $this;
     }
 
     /**
