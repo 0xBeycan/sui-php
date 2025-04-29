@@ -12,17 +12,30 @@ class Writer
 {
     /** @var array<int> */
     private array $data = [];
+    private int $maxSize;
+
+    /**
+     * @param array{initialSize?: int, maxSize?: int} $options Writer options
+     */
+    public function __construct(array $options = [])
+    {
+        $this->maxSize = $options['maxSize'] ?? PHP_INT_MAX;
+    }
 
     /**
      * Write a byte into the buffer.
      * @param int $value Value to write
      * @return self Self for possible chaining
      * @throws \TypeError If value is not a valid byte
+     * @throws \Exception If buffer would exceed max size
      */
     public function write8(int $value): self
     {
         if ($value < 0 || $value > 255) {
             throw new \TypeError("Value must be a valid byte (0-255)");
+        }
+        if (count($this->data) >= $this->maxSize) {
+            throw new \Exception("Buffer would exceed max size of {$this->maxSize} bytes");
         }
         $this->data[] = $value;
         return $this;
