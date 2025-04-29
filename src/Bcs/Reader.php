@@ -51,9 +51,6 @@ class Reader
      */
     public function read8(): int
     {
-        if ($this->bytePosition * 2 >= strlen($this->data)) {
-            throw new \TypeError("Trying to read past the end of the buffer");
-        }
         $value = hexdec(substr($this->data, $this->bytePosition * 2, 2));
         $this->shift(1);
         return (int) $value;
@@ -66,9 +63,6 @@ class Reader
      */
     public function read16(): int
     {
-        if ($this->bytePosition * 2 + 4 > strlen($this->data)) {
-            throw new \TypeError("Trying to read past the end of the buffer");
-        }
         $value = 0;
         for ($i = 0; $i < 2; $i++) {
             $byte = $this->read8();
@@ -84,9 +78,6 @@ class Reader
      */
     public function read32(): int
     {
-        if ($this->bytePosition * 2 + 8 > strlen($this->data)) {
-            throw new \TypeError("Trying to read past the end of the buffer");
-        }
         $value = 0;
         for ($i = 0; $i < 4; $i++) {
             $byte = $this->read8();
@@ -102,9 +93,6 @@ class Reader
      */
     public function read64(): string
     {
-        if ($this->bytePosition * 2 + 16 > strlen($this->data)) {
-            throw new \TypeError("Trying to read past the end of the buffer");
-        }
         $value = '0';
         for ($i = 0; $i < 8; $i++) {
             $byte = $this->read8();
@@ -120,9 +108,6 @@ class Reader
      */
     public function read128(): string
     {
-        if ($this->bytePosition * 2 + 32 > strlen($this->data)) {
-            throw new \TypeError("Trying to read past the end of the buffer");
-        }
         $value = '0';
         for ($i = 0; $i < 16; $i++) {
             $byte = $this->read8();
@@ -138,9 +123,6 @@ class Reader
      */
     public function read256(): string
     {
-        if ($this->bytePosition * 2 + 64 > strlen($this->data)) {
-            throw new \TypeError("Trying to read past the end of the buffer");
-        }
         $value = '0';
         for ($i = 0; $i < 32; $i++) {
             $byte = $this->read8();
@@ -157,9 +139,6 @@ class Reader
      */
     public function readBytes(int $num): array
     {
-        if ($this->bytePosition * 2 + ($num * 2) > strlen($this->data)) {
-            throw new \TypeError("Trying to read past the end of the buffer");
-        }
         $bytes = [];
         for ($i = 0; $i < $num; $i++) {
             $bytes[] = $this->read8();
@@ -179,9 +158,6 @@ class Reader
         $shift = 0;
 
         while (true) {
-            if ($this->bytePosition * 2 >= strlen($this->data)) {
-                throw new \TypeError("Trying to read past the end of the buffer");
-            }
             $byte = $this->read8();
             $value |= ($byte & 0x7f) << $shift;
             if (0 === ($byte & 0x80)) {

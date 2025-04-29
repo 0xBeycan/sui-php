@@ -340,7 +340,7 @@ class Utils
             $normalized = '0' . $normalized;
         }
         if (!preg_match('/^[0-9a-fA-F]+$/', $normalized)) {
-            throw new \Exception('Invalid hex string');
+            throw new \InvalidArgumentException('Invalid hex string');
         }
         $intArr = [];
         for ($i = 0; $i < strlen($normalized); $i += 2) {
