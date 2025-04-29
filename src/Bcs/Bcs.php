@@ -93,7 +93,7 @@ class Bcs
             16,
             'read128',
             'write128',
-            (string)(2 ** 128 - 1),
+            '340282366920938463463374607431768211455',
             $options['validate'] ?? null
         );
     }

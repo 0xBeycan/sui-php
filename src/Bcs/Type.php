@@ -325,9 +325,7 @@ class Type
             function (mixed $value, Writer $writer) use ($toBytes): void {
                 $bytes = $toBytes($value);
                 $writer->writeULEB(count($bytes));
-                foreach ($bytes as $byte) {
-                    $writer->write8($byte);
-                }
+                $writer->writeBytes($bytes);
             },
             $validate
         );
@@ -386,24 +384,38 @@ class Type
         ?\Closure $output = null,
         ?\Closure $validate = null
     ): self {
-        $this->name = $name;
-        $this->validate = $validate;
+        $originalValidate = $this->validate;
+        $originalRead = $this->read;
+        $originalWrite = $this->write;
+        $originalSerialize = $this->serialize;
+        $originalSerializedSize = $this->serializedSize;
 
-        if ($input) {
-            $this->read = function (Reader $reader) use ($input) {
-                $value = $this->read($reader);
-                return $input($value);
-            };
-        }
+        $newType = new self(
+            $name,
+            function (Reader $reader) use ($originalRead, $output): mixed {
+                $value = $originalRead($reader);
+                return $output ? $output($value) : $value;
+            },
+            function (mixed $value, Writer $writer) use ($originalWrite, $input, $originalValidate): void {
+                $transformed = $input ? $input($value) : $value;
+                $originalValidate($transformed);
+                $originalWrite($transformed, $writer);
+            },
+            function (mixed $value, array $options) use ($originalSerialize, $input, $originalValidate): array {
+                $transformed = $input ? $input($value) : $value;
+                $originalValidate($transformed);
+                return ($originalSerialize)($transformed, $options);
+            },
+            $validate ?? function (mixed $value): void {
+                // No validation at the transformed level
+            },
+            function (mixed $value) use ($originalSerializedSize, $input): ?int {
+                $transformed = $input ? $input($value) : $value;
+                return ($originalSerializedSize)($transformed);
+            }
+        );
 
-        if ($output) {
-            $this->write = function (mixed $value, Writer $writer) use ($output): void {
-                $transformed = $output($value);
-                $this->write($transformed, $writer);
-            };
-        }
-
-        return $this;
+        return $newType;
     }
 
     /**
