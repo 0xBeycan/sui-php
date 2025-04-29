@@ -108,8 +108,8 @@ class Writer
      */
     public function write256(string $value): self
     {
-        if (bccomp($value, '0') < 0 || bccomp($value, '115792089237316195423570985008687907853269984665640564039457584007913129639935') > 0) {
-            throw new \TypeError("Value must be a valid U256 (0-115792089237316195423570985008687907853269984665640564039457584007913129639935)");
+        if (bccomp($value, '0') < 0 || bccomp($value, '115792089237316195423570985008687907853269984665640564039457584007913129639935') > 0) { // @phpcs:ignore
+            throw new \TypeError("Value must be a valid U256 (0-115792089237316195423570985008687907853269984665640564039457584007913129639935)"); // @phpcs:ignore
         }
         for ($i = 0; $i < 32; $i++) {
             $byte = bcmod($value, '256');
