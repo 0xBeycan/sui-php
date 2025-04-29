@@ -96,12 +96,9 @@ class Reader
         if ($this->bytePosition * 2 >= strlen($this->data)) {
             return '0';
         }
-        $value = '0';
-        for ($i = 0; $i < 8; $i++) {
-            $byte = $this->read8();
-            $value = bcadd($value, bcmul((string)$byte, bcpow('256', (string)$i)));
-        }
-        return $value;
+        $value1 = (string)$this->read32();
+        $value2 = (string)$this->read32();
+        return bcmul(bcadd(bcmul($value2, bcpow('2', '32')), $value1), '1');
     }
 
     /**
@@ -113,12 +110,9 @@ class Reader
         if ($this->bytePosition * 2 >= strlen($this->data)) {
             return '0';
         }
-        $value = '0';
-        for ($i = 0; $i < 16; $i++) {
-            $byte = $this->read8();
-            $value = bcadd($value, bcmul((string)$byte, bcpow('256', (string)$i)));
-        }
-        return $value;
+        $value1 = $this->read64();
+        $value2 = $this->read64();
+        return bcadd(bcmul($value2, bcpow('2', '64')), $value1);
     }
 
     /**
@@ -130,12 +124,9 @@ class Reader
         if ($this->bytePosition * 2 >= strlen($this->data)) {
             return '0';
         }
-        $value = '0';
-        for ($i = 0; $i < 32; $i++) {
-            $byte = $this->read8();
-            $value = bcadd($value, bcmul((string)$byte, bcpow('256', (string)$i)));
-        }
-        return $value;
+        $value1 = $this->read128();
+        $value2 = $this->read128();
+        return bcadd(bcmul($value2, bcpow('2', '128')), $value1);
     }
 
     /**
@@ -178,5 +169,21 @@ class Reader
         }
 
         return $value;
+    }
+
+    /**
+     * Read a BCS vector: read a length and then apply function `cb` X times
+     * where X is the length of the vector, defined as ULEB in BCS bytes.
+     * @param callable $cb Callback to process elements of vector.
+     * @return array<mixed> Array of the resulting values, returned by callback.
+     */
+    public function readVec(callable $cb): array
+    {
+        $length = $this->readULEB();
+        $result = [];
+        for ($i = 0; $i < $length; $i++) {
+            $result[] = $cb($this, $i, $length);
+        }
+        return $result;
     }
 }

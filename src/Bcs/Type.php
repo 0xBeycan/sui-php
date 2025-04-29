@@ -6,6 +6,10 @@ namespace Sui\Bcs;
 
 use Sui\Utils;
 
+/**
+ * @template T
+ * @template Input of T
+ */
 class Type
 {
     private string $name;
@@ -51,7 +55,7 @@ class Type
     /**
      * Read the type from a reader
      * @param Reader $reader The reader to read from
-     * @return mixed The read value
+     * @return T The read value
      */
     public function read(Reader $reader): mixed
     {
@@ -63,6 +67,7 @@ class Type
      * @param mixed $value The value to write
      * @param Writer $writer The writer to write to
      * @return void
+     * @throws \TypeError If validation fails
      */
     public function write(mixed $value, Writer $writer): void
     {
@@ -75,11 +80,15 @@ class Type
      * @param mixed $value The value to serialize
      * @param array<string,mixed>|null $options Serialization options
      * @return Serialized The serialized value
+     * @throws \TypeError If validation fails
      */
     public function serialize(mixed $value, ?array $options = null): Serialized
     {
         $this->validate($value);
         $bytes = ($this->serialize)($value, $options ?? []);
+        if (!is_array($bytes)) {
+            throw new \TypeError('Serialized value must be an array of bytes');
+        }
         $byteString = pack('C*', ...$bytes);
         return new Serialized($this, $byteString);
     }
@@ -87,7 +96,7 @@ class Type
     /**
      * Parse bytes into a value
      * @param array<int>|string $bytes The bytes to parse
-     * @return mixed The parsed value
+     * @return T The parsed value
      */
     public function parse(array|string $bytes): mixed
     {
@@ -113,7 +122,7 @@ class Type
     /**
      * Parse a hex string into a value
      * @param string $hex The hex string to parse
-     * @return mixed The parsed value
+     * @return T The parsed value
      */
     public function fromHex(string $hex): mixed
     {
@@ -123,7 +132,7 @@ class Type
     /**
      * Parse a base58 string into a value
      * @param string $base58 The base58 string to parse
-     * @return mixed The parsed value
+     * @return T The parsed value
      */
     public function fromBase58(string $base58): mixed
     {
@@ -133,7 +142,7 @@ class Type
     /**
      * Parse a base64 string into a value
      * @param string $base64 The base64 string to parse
-     * @return mixed The parsed value
+     * @return T The parsed value
      */
     public function fromBase64(string $base64): mixed
     {
@@ -149,10 +158,20 @@ class Type
      * Validate a value
      * @param mixed $value The value to validate
      * @return void
+     * @throws \TypeError If validation fails
      */
     public function validate(mixed $value): void
     {
-        ($this->validate)($value);
+        try {
+            ($this->validate)($value);
+        } catch (\Throwable $e) {
+            throw new \TypeError(sprintf(
+                'Invalid %s value: %s. %s',
+                $this->name,
+                is_scalar($value) ? (string)$value : gettype($value),
+                $e->getMessage()
+            ));
+        }
     }
 
     /**
@@ -167,12 +186,14 @@ class Type
 
     /**
      * Create a fixed size type
+     * @template T2
+     * @template Input2 of T2
      * @param string $name The name of the type
      * @param int $size The fixed size
      * @param \Closure $read Function to read the type
      * @param \Closure $write Function to write the type
      * @param \Closure|null $validate Optional validation function
-     * @return self The created type
+     * @return self<T2,Input2> The created type
      */
     public static function fixedSize(
         string $name,
@@ -206,7 +227,7 @@ class Type
      * @param string $writeMethod The writer method name
      * @param int $maxValue The maximum value
      * @param \Closure|null $validate Optional validation function
-     * @return self The created type
+     * @return self<int,int> The created type
      */
     public static function uInt(
         string $name,
@@ -246,7 +267,7 @@ class Type
      * @param string $writeMethod The writer method name
      * @param string $maxValue The maximum value
      * @param \Closure|null $validate Optional validation function
-     * @return self The created type
+     * @return self<string,string|int|float> The created type
      */
     public static function bigUInt(
         string $name,
@@ -285,7 +306,7 @@ class Type
      * @param \Closure $toBytes Function to convert to bytes
      * @param \Closure $fromBytes Function to convert from bytes
      * @param \Closure|null $validate Optional validation function
-     * @return self The created type
+     * @return self<string,string> The created type
      */
     public static function stringLike(
         string $name,
@@ -313,8 +334,10 @@ class Type
 
     /**
      * Create a lazy type
+     * @template T2
+     * @template Input2 of T2
      * @param \Closure $cb Function to create the type
-     * @return self The created type
+     * @return self<T2,Input2> The created type
      */
     public static function lazy(\Closure $cb): self
     {
@@ -335,7 +358,8 @@ class Type
                 $init()->write($value, $writer);
             },
             function (mixed $value, array $options) use ($init): array {
-                return $init()->serialize($value, $options)->toBytes();
+                $serialized = $init()->serialize($value, $options);
+                return array_values(unpack('C*', $serialized->toBytes()) ?: []);
             },
             function (mixed $value) use ($init): void {
                 $init()->validate($value);
@@ -348,11 +372,13 @@ class Type
 
     /**
      * Create a transformed type
+     * @template T2
+     * @template Input2 of T2
      * @param string|null $name The name of the type
      * @param \Closure|null $input Function to transform input
      * @param \Closure|null $output Function to transform output
      * @param \Closure|null $validate Optional validation function
-     * @return self The created type
+     * @return self<T2,Input2> The created type
      */
     public function transform(
         ?string $name = null,
@@ -378,7 +404,8 @@ class Type
                 $this->write($input($value), $writer);
             },
             function (mixed $value, array $options) use ($input): array {
-                return $this->serialize($input($value), $options)->toBytes();
+                $serialized = $this->serialize($input($value), $options);
+                return array_values(unpack('C*', $serialized->toBytes()) ?: []);
             },
             $validate,
             function (mixed $value) use ($input): ?int {
@@ -389,11 +416,13 @@ class Type
 
     /**
      * Create a dynamic size type
+     * @template T2
+     * @template Input2 of T2
      * @param string $name The name of the type
      * @param \Closure $read Function to read the type
      * @param \Closure $write Function to write the type
      * @param \Closure|null $validate Optional validation function
-     * @return self The created type
+     * @return self<T2,Input2> The created type
      */
     public static function dynamicSize(string $name, \Closure $read, \Closure $write, ?\Closure $validate = null): self
     {

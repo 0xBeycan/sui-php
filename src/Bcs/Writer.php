@@ -70,25 +70,26 @@ class Writer
     /**
      * Write a U8 value into the buffer and shift cursor position by 1.
      *
-     * @param int $value Value to write
+     * @param int|string $value Value to write
      * @return self
      */
-    public function write8(int $value): self
+    public function write8(int|string $value): self
     {
         $this->ensureSizeOrGrow(1);
-        $this->bytes[$this->bytePosition] = $value & 0xFF;
+        $this->bytes[$this->bytePosition] = (int)$value & 0xFF;
         return $this->shift(1);
     }
 
     /**
      * Write a U16 value into the buffer and shift cursor position by 2.
      *
-     * @param int $value Value to write
+     * @param int|string $value Value to write
      * @return self
      */
-    public function write16(int $value): self
+    public function write16(int|string $value): self
     {
         $this->ensureSizeOrGrow(2);
+        $value = (int)$value;
         $this->bytes[$this->bytePosition] = $value & 0xFF;
         $this->bytes[$this->bytePosition + 1] = ($value >> 8) & 0xFF;
         return $this->shift(2);
@@ -97,12 +98,13 @@ class Writer
     /**
      * Write a U32 value into the buffer and shift cursor position by 4.
      *
-     * @param int $value Value to write
+     * @param int|string $value Value to write
      * @return self
      */
-    public function write32(int $value): self
+    public function write32(int|string $value): self
     {
         $this->ensureSizeOrGrow(4);
+        $value = (int)$value;
         $this->bytes[$this->bytePosition] = $value & 0xFF;
         $this->bytes[$this->bytePosition + 1] = ($value >> 8) & 0xFF;
         $this->bytes[$this->bytePosition + 2] = ($value >> 16) & 0xFF;
@@ -119,10 +121,10 @@ class Writer
     public function write64(int|string $value): self
     {
         $this->ensureSizeOrGrow(8);
-        $value = (string) $value;
+        $value = (string)$value;
         for ($i = 0; $i < 8; $i++) {
             $byte = bcmod($value, '256');
-            $this->bytes[$this->bytePosition + $i] = (int) $byte;
+            $this->bytes[$this->bytePosition + $i] = (int)$byte;
             $value = bcdiv($value, '256', 0);
         }
         return $this->shift(8);
@@ -137,10 +139,10 @@ class Writer
     public function write128(int|string $value): self
     {
         $this->ensureSizeOrGrow(16);
-        $value = (string) $value;
+        $value = (string)$value;
         for ($i = 0; $i < 16; $i++) {
             $byte = bcmod($value, '256');
-            $this->bytes[$this->bytePosition + $i] = (int) $byte;
+            $this->bytes[$this->bytePosition + $i] = (int)$byte;
             $value = bcdiv($value, '256', 0);
         }
         return $this->shift(16);
@@ -155,10 +157,10 @@ class Writer
     public function write256(int|string $value): self
     {
         $this->ensureSizeOrGrow(32);
-        $value = (string) $value;
+        $value = (string)$value;
         for ($i = 0; $i < 32; $i++) {
             $byte = bcmod($value, '256');
-            $this->bytes[$this->bytePosition + $i] = (int) $byte;
+            $this->bytes[$this->bytePosition + $i] = (int)$byte;
             $value = bcdiv($value, '256', 0);
         }
         return $this->shift(32);

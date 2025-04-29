@@ -11,86 +11,121 @@ class Bcs
     /**
      * Creates a Type that can be used to read and write an 8-bit unsigned integer.
      *
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<int,int> The created Type instance
      */
-    public static function u8(string $name = 'u8', ?\Closure $validate = null): Type
+    public static function u8(array $options = []): Type
     {
-        return Type::uInt($name, 1, 'read8', 'write8', 2 ** 8 - 1, $validate);
+        return Type::uInt(
+            $options['name'] ?? 'u8',
+            1,
+            'read8',
+            'write8',
+            2 ** 8 - 1,
+            $options['validate'] ?? null
+        );
     }
 
     /**
      * Creates a Type that can be used to read and write a 16-bit unsigned integer.
      *
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<int,int> The created Type instance
      */
-    public static function u16(string $name = 'u16', ?\Closure $validate = null): Type
+    public static function u16(array $options = []): Type
     {
-        return Type::uInt($name, 2, 'read16', 'write16', 2 ** 16 - 1, $validate);
+        return Type::uInt(
+            $options['name'] ?? 'u16',
+            2,
+            'read16',
+            'write16',
+            2 ** 16 - 1,
+            $options['validate'] ?? null
+        );
     }
 
     /**
      * Creates a Type that can be used to read and write a 32-bit unsigned integer.
      *
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<int,int> The created Type instance
      */
-    public static function u32(string $name = 'u32', ?\Closure $validate = null): Type
+    public static function u32(array $options = []): Type
     {
-        return Type::uInt($name, 4, 'read32', 'write32', 2 ** 32 - 1, $validate);
+        return Type::uInt(
+            $options['name'] ?? 'u32',
+            4,
+            'read32',
+            'write32',
+            2 ** 32 - 1,
+            $options['validate'] ?? null
+        );
     }
 
     /**
      * Creates a Type that can be used to read and write a 64-bit unsigned integer.
      *
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<string,int|string> The created Type instance
      */
-    public static function u64(string $name = 'u64', ?\Closure $validate = null): Type
+    public static function u64(array $options = []): Type
     {
-        return Type::bigUInt($name, 8, 'read64', 'write64', '18446744073709551615', $validate);
+        return Type::bigUInt(
+            $options['name'] ?? 'u64',
+            8,
+            'read64',
+            'write64',
+            '18446744073709551615',
+            $options['validate'] ?? null
+        );
     }
 
     /**
      * Creates a Type that can be used to read and write a 128-bit unsigned integer.
      *
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<string,int|string> The created Type instance
      */
-    public static function u128(string $name = 'u128', ?\Closure $validate = null): Type
+    public static function u128(array $options = []): Type
     {
-        return Type::bigUInt($name, 16, 'read128', 'write128', (string)(2 ** 128 - 1), $validate);
+        return Type::bigUInt(
+            $options['name'] ?? 'u128',
+            16,
+            'read128',
+            'write128',
+            (string)(2 ** 128 - 1),
+            $options['validate'] ?? null
+        );
     }
 
     /**
      * Creates a Type that can be used to read and write a 256-bit unsigned integer.
      *
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<string,int|string> The created Type instance
      */
-    public static function u256(string $name = 'u256', ?\Closure $validate = null): Type
+    public static function u256(array $options = []): Type
     {
-        return Type::bigUInt($name, 32, 'read256', 'write256', (string)(2 ** 256 - 1), $validate);
+        return Type::bigUInt(
+            $options['name'] ?? 'u256',
+            32,
+            'read256',
+            'write256',
+            (string)(2 ** 256 - 1),
+            $options['validate'] ?? null
+        );
     }
 
     /**
      * Creates a Type that can be used to read and write boolean values.
      *
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<bool,bool> The created Type instance
      */
-    public static function bool(string $name = 'bool', ?\Closure $validate = null): Type
+    public static function bool(array $options = []): Type
     {
         return Type::fixedSize(
-            $name,
+            $options['name'] ?? 'bool',
             1,
             function (Reader $reader): bool {
                 $value = $reader->read8();
@@ -102,12 +137,12 @@ class Bcs
             function (bool $value, Writer $writer): void {
                 $writer->write8($value ? 1 : 0);
             },
-            function (mixed $value) use ($validate): void {
+            function (mixed $value) use ($options): void {
                 if (!is_bool($value)) {
                     throw new \TypeError("Expected boolean, found " . gettype($value));
                 }
-                if ($validate) {
-                    $validate($value);
+                if ($options['validate'] ?? null) {
+                    ($options['validate'])($value);
                 }
             }
         );
@@ -116,26 +151,25 @@ class Bcs
     /**
      * Creates a Type that can be used to read and write unsigned LEB encoded integers
      *
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<int,int> The created Type instance
      */
-    public static function uleb128(string $name = 'uleb128', ?\Closure $validate = null): Type
+    public static function uleb128(array $options = []): Type
     {
-        return self::dynamicSize(
-            $name,
+        return Type::dynamicSize(
+            $options['name'] ?? 'uleb128',
             function (Reader $reader): int {
                 return $reader->readULEB();
             },
             function (int $value, Writer $writer): void {
                 $writer->writeULEB($value);
             },
-            function (mixed $value) use ($validate): void {
+            function (mixed $value) use ($options): void {
                 if (!is_int($value)) {
                     throw new \TypeError("Expected integer, found " . gettype($value));
                 }
-                if ($validate) {
-                    $validate($value);
+                if ($options['validate'] ?? null) {
+                    ($options['validate'])($value);
                 }
             }
         );
@@ -145,13 +179,12 @@ class Bcs
      * Creates a Type representing a fixed length byte array
      *
      * @param int $size The number of bytes this type represents
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<array<int>,array<int>> The created Type instance
      */
-    public static function bytes(int $size, string $name = null, ?\Closure $validate = null): Type
+    public static function bytes(int $size, array $options = []): Type
     {
-        $name = $name ?? "bytes[{$size}]";
+        $name = $options['name'] ?? "bytes[{$size}]";
         return Type::fixedSize(
             $name,
             $size,
@@ -163,21 +196,30 @@ class Bcs
                     $writer->write8($value[$i] ?? 0);
                 }
             },
-            $validate
+            function (mixed $value) use ($size, $options): void {
+                if (!is_array($value)) {
+                    throw new \TypeError("Expected array, found " . gettype($value));
+                }
+                if (count($value) !== $size) {
+                    throw new \TypeError("Expected array of length {$size}, found " . count($value));
+                }
+                if ($options['validate'] ?? null) {
+                    ($options['validate'])($value);
+                }
+            }
         );
     }
 
     /**
      * Creates a Type representing a variable length byte array
      *
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<array<int>,array<int>> The created Type instance
      */
-    public static function byteVector(string $name = 'bytesVector', ?\Closure $validate = null): Type
+    public static function byteVector(array $options = []): Type
     {
         return Type::dynamicSize(
-            $name,
+            $options['name'] ?? 'bytesVector',
             function (Reader $reader): array {
                 $length = $reader->readULEB();
                 return $reader->readBytes($length);
@@ -188,33 +230,39 @@ class Bcs
                     $writer->write8($byte ?? 0);
                 }
             },
-            $validate
+            function (mixed $value) use ($options): void {
+                if (!is_array($value)) {
+                    throw new \TypeError("Expected array, found " . gettype($value));
+                }
+                if ($options['validate'] ?? null) {
+                    ($options['validate'])($value);
+                }
+            }
         );
     }
 
     /**
      * Creates a Type that can ser/de string values. Strings will be UTF-8 encoded
      *
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<string,string> The created Type instance
      */
-    public static function string(string $name = 'string', ?\Closure $validate = null): Type
+    public static function string(array $options = []): Type
     {
-        return self::vector(self::u8(), $name)->transform(
-            $name,
+        return Type::stringLike(
+            $options['name'] ?? 'string',
             function (string $value): array {
                 return array_values(unpack('C*', $value) ?: []);
             },
             function (array $bytes): string {
-                return implode(array_map('chr', $bytes));
+                return pack('C*', ...$bytes);
             },
-            function (mixed $value) use ($validate): void {
+            function (mixed $value) use ($options): void {
                 if (!is_string($value)) {
                     throw new \TypeError("Expected string, found " . gettype($value));
                 }
-                if ($validate) {
-                    $validate($value);
+                if ($options['validate'] ?? null) {
+                    ($options['validate'])($value);
                 }
             }
         );
@@ -225,16 +273,15 @@ class Bcs
      *
      * @param int $size The number of elements in the array
      * @param Type $type The Type of each element in the array
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<array<mixed>,array<mixed>> The created Type instance
      */
-    public static function fixedArray(int $size, Type $type, string $name = null, ?\Closure $validate = null): Type
+    public static function fixedArray(int $size, Type $type, array $options = []): Type
     {
-        $name = $name ?? "{$type->getName()}[{$size}]";
+        $name = $options['name'] ?? "{$type->getName()}[{$size}]";
         return Type::fixedSize(
             $name,
-            $size * $type->serializedSize([]),
+            $size * $type->serializedSize((object)['_' => null]),
             function (Reader $reader) use ($size, $type): array {
                 $result = [];
                 for ($i = 0; $i < $size; $i++) {
@@ -242,20 +289,20 @@ class Bcs
                 }
                 return $result;
             },
-            function (array $value, Writer $writer) use ($size, $type): void {
-                for ($i = 0; $i < $size; $i++) {
-                    $type->write($value[$i] ?? null, $writer);
+            function (array $value, Writer $writer) use ($type): void {
+                foreach ($value as $item) {
+                    $type->write($item, $writer);
                 }
             },
-            function (mixed $value) use ($size, $validate): void {
+            function (mixed $value) use ($size, $options): void {
                 if (!is_array($value)) {
                     throw new \TypeError("Expected array, found " . gettype($value));
                 }
                 if (count($value) !== $size) {
                     throw new \TypeError("Expected array of length {$size}, found " . count($value));
                 }
-                if ($validate) {
-                    $validate($value);
+                if (null !== ($options['validate'] ?? null)) {
+                    ($options['validate'])($value);
                 }
             }
         );
@@ -265,49 +312,41 @@ class Bcs
      * Creates a Type representing an optional value
      *
      * @param Type $type The Type of the optional value
-     * @param string $name The name of the type
-     * @return Type The created Type instance
+     * @return Type<mixed,mixed> The created Type instance
      */
-    public static function option(Type $type, string $name = null): Type
+    public static function option(Type $type): Type
     {
-        $name = $name ?? "Option<{$type->getName()}>";
-        return Type::dynamicSize(
-            $name,
-            function (Reader $reader) use ($type): mixed {
-                if (0 === $reader->read8()) {
-                    return null;
-                }
-                return $type->read($reader);
-            },
-            function (mixed $value, Writer $writer) use ($type): void {
+        return self::enum("Option<{$type->getName()}>", [
+            'None' => null,
+            'Some' => $type,
+        ])->transform(
+            null,
+            function (mixed $value): array {
                 if (null === $value) {
-                    $writer->write8(0);
-                    return;
+                    return ['None' => true];
                 }
-                $writer->write8(1);
-                $type->write($value, $writer);
+                return ['Some' => $value];
             },
-            function (mixed $value) use ($type): void {
-                if (null !== $value) {
-                    $type->validate($value);
+            function (array $value): mixed {
+                if (isset($value['Some'])) {
+                    return $value['Some'];
                 }
+                return null;
             }
         );
     }
 
     /**
-     * Creates a Type representing a vector of a given type
+     * Creates a Type representing a variable length vector of a given type
      *
      * @param Type $type The Type of each element in the vector
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<array<mixed>,array<mixed>> The created Type instance
      */
-    public static function vector(Type $type, string $name = null, ?\Closure $validate = null): Type
+    public static function vector(Type $type, array $options = []): Type
     {
-        $name = $name ?? "vector<{$type->getName()}>";
         return Type::dynamicSize(
-            $name,
+            $options['name'] ?? "vector<{$type->getName()}>",
             function (Reader $reader) use ($type): array {
                 $length = $reader->readULEB();
                 $result = [];
@@ -322,12 +361,12 @@ class Bcs
                     $type->write($item, $writer);
                 }
             },
-            function (mixed $value) use ($validate): void {
+            function (mixed $value) use ($options): void {
                 if (!is_array($value)) {
                     throw new \TypeError("Expected array, found " . gettype($value));
                 }
-                if ($validate) {
-                    $validate($value);
+                if ($options['validate'] ?? null) {
+                    ($options['validate'])($value);
                 }
             }
         );
@@ -337,16 +376,15 @@ class Bcs
      * Creates a Type representing a tuple of a given set of types
      *
      * @param array<Type> $types The Types for each element in the tuple
-     * @param string $name The name of the type
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{name?: string, validate?: \Closure} $options Optional options
+     * @return Type<array<mixed>,array<mixed>> The created Type instance
      */
-    public static function tuple(array $types, string $name = null, ?\Closure $validate = null): Type
+    public static function tuple(array $types, array $options = []): Type
     {
-        $name = $name ?? '(' . implode(', ', array_map(fn($t) => $t->getName(), $types)) . ')';
+        $name = $options['name'] ?? '(' . implode(', ', array_map(fn($t) => $t->getName(), $types)) . ')';
         return Type::fixedSize(
             $name,
-            array_sum(array_map(fn($t) => $t->serializedSize([]), $types)),
+            array_sum(array_map(fn($t) => $t->serializedSize((object)['_' => null]), $types)),
             function (Reader $reader) use ($types): array {
                 $result = [];
                 foreach ($types as $type) {
@@ -359,15 +397,15 @@ class Bcs
                     $type->write($value[$i] ?? null, $writer);
                 }
             },
-            function (mixed $value) use ($types, $validate): void {
+            function (mixed $value) use ($types, $options): void {
                 if (!is_array($value)) {
                     throw new \TypeError("Expected array, found " . gettype($value));
                 }
                 if (count($value) !== count($types)) {
                     throw new \TypeError("Expected array of length " . count($types) . ", found " . count($value));
                 }
-                if ($validate) {
-                    $validate($value);
+                if (null !== ($options['validate'] ?? null)) {
+                    ($options['validate'])($value);
                 }
             }
         );
@@ -378,10 +416,10 @@ class Bcs
      *
      * @param string $name The name of the struct
      * @param array<string,Type> $fields The fields of the struct
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array{validate?: \Closure} $options Optional options
+     * @return Type<array<string,mixed>,array<string,mixed>> The created Type instance
      */
-    public static function struct(string $name, array $fields, ?\Closure $validate = null): Type
+    public static function struct(string $name, array $fields, array $options = []): Type
     {
         $canonicalOrder = array_entries($fields);
 
@@ -406,12 +444,12 @@ class Bcs
                 }
                 return $writer->toBytes();
             },
-            function (mixed $value) use ($validate): void {
+            function (mixed $value) use ($options): void {
                 if (!is_array($value)) {
                     throw new \TypeError("Expected array, found " . gettype($value));
                 }
-                if ($validate) {
-                    $validate($value);
+                if ($options['validate'] ?? null) {
+                    ($options['validate'])($value);
                 }
             },
             function (mixed $value): ?int {
@@ -424,55 +462,58 @@ class Bcs
      * Creates a Type representing an enum of a given set of options
      *
      * @param string $name The name of the enum
-     * @param array<string,Type|null> $values The values of the enum
-     * @param \Closure|null $validate Optional validation function
-     * @return Type The created Type instance
+     * @param array<string,Type|null> $variants The variants of the enum
+     * @param array{validate?: \Closure} $options Optional options
+     * @return Type<array<string,mixed>,array<string,mixed>> The created Type instance
      */
-    public static function enum(string $name, array $values, ?\Closure $validate = null): Type
+    public static function enum(string $name, array $variants, array $options = []): Type
     {
-        $variants = array_keys($values);
+        $canonicalOrder = array_entries($variants);
+
         return Type::dynamicSize(
             $name,
-            function (Reader $reader) use ($variants, $values): array {
-                $kind = $reader->readULEB();
-                if (!isset($variants[$kind])) {
-                    throw new \TypeError("Invalid variant index {$kind}");
+            function (Reader $reader) use ($canonicalOrder, $name): array {
+                $index = $reader->readULEB();
+                if (!isset($canonicalOrder[$index])) {
+                    throw new \TypeError("Unknown value {$index} for enum {$name}");
                 }
-                $variant = $variants[$kind];
-                $type = $values[$variant];
-                $result = ['$kind' => $variant];
-                if (null !== $type) {
-                    $result[$variant] = $type->read($reader);
-                }
-                return $result;
+
+                [$kind, $type] = $canonicalOrder[$index];
+                return [
+                    $kind => $type?->read($reader) ?? true,
+                    '$kind' => $kind,
+                ];
             },
-            function (array $value, Writer $writer) use ($variants, $values): void {
-                if (!isset($value['$kind'])) {
-                    throw new \TypeError("Expected array with \$kind key");
-                }
-                $variant = $value['$kind'];
-                $kind = array_search($variant, $variants, true);
-                if (false === $kind) {
-                    throw new \TypeError("Invalid variant {$variant}");
-                }
-                $writer->writeULEB($kind);
-                $type = $values[$variant];
-                if (null !== $type && isset($value[$variant])) {
-                    $type->write($value[$variant], $writer);
+            function (array $value, Writer $writer) use ($canonicalOrder): void {
+                $variant = array_filter($value, fn($k) => '$kind' !== $k, ARRAY_FILTER_USE_KEY);
+                $variantName = key($variant);
+                $variantValue = current($variant);
+
+                foreach ($canonicalOrder as $i => [$kind, $type]) {
+                    if ($kind === $variantName) {
+                        $writer->writeULEB($i);
+                        $type?->write($variantValue, $writer);
+                        return;
+                    }
                 }
             },
-            function (mixed $value) use ($variants, $validate): void {
+            function (mixed $value) use ($name, $variants, $options): void {
                 if (!is_array($value)) {
                     throw new \TypeError("Expected array, found " . gettype($value));
                 }
-                if (!isset($value['$kind'])) {
-                    throw new \TypeError("Expected array with \$kind key");
+
+                $keys = array_filter(array_keys($value), fn($k) => '$kind' !== $k && null !== ($value[$k] ?? null));
+                if (1 !== count($keys)) {
+                    throw new \TypeError("Expected object with one key, but found " . count($keys) . " for type {$name}");
                 }
-                if (!in_array($value['$kind'], $variants, true)) {
-                    throw new \TypeError("Invalid variant {$value['$kind']}");
+
+                $variant = $keys[0];
+                if (!isset($variants[$variant])) {
+                    throw new \TypeError("Invalid enum variant {$variant}");
                 }
-                if ($validate) {
-                    $validate($value);
+
+                if (null !== ($options['validate'] ?? null)) {
+                    ($options['validate'])($value);
                 }
             }
         );
@@ -483,14 +524,12 @@ class Bcs
      *
      * @param Type $keyType The Type of the key
      * @param Type $valueType The Type of the value
-     * @param string $name The name of the type
-     * @return Type The created Type instance
+     * @return Type<array<mixed,mixed>,array<mixed,mixed>> The created Type instance
      */
-    public static function map(Type $keyType, Type $valueType, string $name = null): Type
+    public static function map(Type $keyType, Type $valueType): Type
     {
-        $name = $name ?? "Map<{$keyType->getName()}, {$valueType->getName()}>";
         return self::vector(self::tuple([$keyType, $valueType]))->transform(
-            $name,
+            "Map<{$keyType->getName()}, {$valueType->getName()}>",
             function (array $value): array {
                 return array_map(
                     fn($k, $v) => [$k, $v],
@@ -517,33 +556,6 @@ class Bcs
     public static function lazy(\Closure $cb): Type
     {
         return Type::lazy($cb);
-    }
-
-    /**
-     * Create a type with dynamic size
-     *
-     * @param string $name The name of the type
-     * @param \Closure $read The read function
-     * @param \Closure $write The write function
-     * @param \Closure $validate The validate function
-     * @return Type The type
-     */
-    public static function dynamicSize(string $name, \Closure $read, \Closure $write, \Closure $validate): Type
-    {
-        return new Type(
-            $name,
-            $read,
-            $write,
-            function ($value, $options) use ($write): array {
-                $writer = new Writer($options ?? []);
-                $write($value, $writer);
-                return $writer->toBytes();
-            },
-            $validate,
-            function (): ?int {
-                return null;
-            }
-        );
     }
 }
 
