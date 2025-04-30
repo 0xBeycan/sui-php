@@ -72,25 +72,36 @@ class Utils
     public static function fromBase58(string $input): array
     {
         $value = '0';
+
         for ($i = 0; $i < strlen($input); $i++) {
-            $value = bcadd(bcmul($value, '58'), strval(strpos(Constants::BASE58_ALPHABET, $input[$i])));
+            $value = bcadd(bcmul($value, '58'), (string)strpos(Constants::BASE58_ALPHABET, $input[$i]));
         }
 
-        // Decimal to hexadecimal conversion
+        // Decimal to hexadecimal
         $hex = '';
         while (bccomp($value, '0') > 0) {
             $remainder = bcmod($value, '16');
-            $hex = dechex(intval($remainder)) . $hex;
+            $hex = dechex((int)$remainder) . $hex;
             $value = bcdiv($value, '16', 0);
         }
 
-        if (0 != strlen($hex) % 2) {
+        // Pad hex if odd length
+        if (0 !== strlen($hex) % 2) {
             $hex = '0' . $hex;
         }
 
-        $unpack = unpack('C*', hex2bin($hex) ?: '');
+        // Count leading '1's (which represent 0x00 bytes)
+        $leadingOnes = 0;
+        for ($i = 0; $i < strlen($input) && $input[$i] === Constants::BASE58_ALPHABET[0]; $i++) {
+            $leadingOnes++;
+        }
 
-        return array_values($unpack ?: []);
+        $result = array_fill(0, $leadingOnes, 0); // Add 0x00 bytes for each leading '1'
+
+        $unpack = unpack('C*', hex2bin($hex) ?: '');
+        $decoded = array_values($unpack ?: []);
+
+        return array_merge($result, $decoded);
     }
 
     /**

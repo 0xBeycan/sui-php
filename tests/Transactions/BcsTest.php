@@ -70,38 +70,7 @@ class BcsTest extends TestCase
             'objectId' => Utils::normalizeSuiAddress(str_pad((string)rand(0, 100000), 64, '0')),
             'version' => (string)rand(0, 10000),
             'digest' => Utils::toBase58([
-                0,
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                0,
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                0,
-                1,
-                2,
-                3,
-                4,
-                5,
-                6,
-                7,
-                8,
-                9,
-                1,
-                2
+				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2 // phpcs:ignore
             ]),
         ];
     }
@@ -113,8 +82,6 @@ class BcsTest extends TestCase
      */
     public function testCanSerializeTransactionDataWithProgrammableTransaction(): void
     {
-        $this->assertTrue(true);
-        return;
         $sui = Utils::normalizeSuiAddress('0x2');
         $txData = [
             '$kind' => 'V1',
