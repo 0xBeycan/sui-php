@@ -34,15 +34,13 @@ class Type
         $this->name = $name;
         $this->read = $read;
         $this->write = $write;
-        $this->validate = $validate;
+        $this->validate = $validate ?? fn() => void;
         $this->serialize = $serialize ?? function (mixed $value, array $options) use ($write): array {
             $writer = new Writer($options);
             $write($value, $writer);
             return $writer->toBytes();
         };
-        $this->serializedSize = $serializedSize ?? function (mixed $value): ?int {
-            return null;
-        };
+        $this->serializedSize = $serializedSize ?? fn() => null;
     }
 
     /**
@@ -381,38 +379,27 @@ class Type
         ?\Closure $output = null,
         ?\Closure $validate = null
     ): self {
-        $originalValidate = $this->validate;
-        $originalRead = $this->read;
-        $originalWrite = $this->write;
-        $originalSerialize = $this->serialize;
-        $originalSerializedSize = $this->serializedSize;
-
-        $newType = new self(
-            $name,
-            function (Reader $reader) use ($originalRead, $output): mixed {
-                $value = $originalRead($reader);
-                return $output ? $output($value) : $value;
+        return new self(
+            $name ?? $this->name,
+            function (Reader $reader) use ($output): mixed {
+                return $output ? $output($this->read($reader)) : $this->read($reader);
             },
-            function (mixed $value, Writer $writer) use ($originalWrite, $input, $originalValidate): void {
-                $transformed = $input ? $input($value) : $value;
-                $originalValidate($transformed);
-                $originalWrite($transformed, $writer);
+            function (mixed $value, Writer $writer) use ($input): void {
+                ($this->write)($input ? $input($value) : $value, $writer);
             },
-            $validate ?? function (mixed $value): void {
-                // No validation at the transformed level
+            function (mixed $value) use ($validate, $input): void {
+                if ($validate) {
+                    $validate($value);
+                }
+                $this->validate($input ? $input($value) : $value);
             },
-            function (mixed $value, array $options) use ($originalSerialize, $input, $originalValidate): array {
-                $transformed = $input ? $input($value) : $value;
-                $originalValidate($transformed);
-                return ($originalSerialize)($transformed, $options);
+            function (mixed $value, array $options) use ($input): array {
+                return ($this->serialize)($input ? $input($value) : $value, $options);
             },
-            function (mixed $value) use ($originalSerializedSize, $input): ?int {
-                $transformed = $input ? $input($value) : $value;
-                return ($originalSerializedSize)($transformed);
+            function (mixed $value) use ($input): ?int {
+                return $this->serializedSize($input ? $input($value) : $value);
             }
         );
-
-        return $newType;
     }
 
     /**
