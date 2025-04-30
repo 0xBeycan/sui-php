@@ -29,31 +29,36 @@ class ClientTest extends TestCase
     /**
      * @var string
      */
-    protected string $tokenPackage = '0xdb2062063e6756bb0c39c1c4a208a8b341f2241d941621ee5c52f00b13e4cb46';
+    protected string $tokenPackage = '0x669d8724a063f2b8890ba15728366f1acf924d8440909cc0bca4b7d15666068e';
 
     /**
      * @var string
      */
-    protected string $nftPackage = '0xd324a3ddcd34338b978a02b17407781bfc17cb0b432c38c2e60033522a5e4045';
+    protected string $nftPackage = '0x0a777320751f95a23df57e8d4d2b2d427d52ed94f2f6f05e8cf9f7828e9e604d';
 
     /**
      * @var string
      */
     protected string $nftType =
-    '0xd324a3ddcd34338b978a02b17407781bfc17cb0b432c38c2e60033522a5e4045::Test_NFT::TEST_NFT';
+    '0x0a777320751f95a23df57e8d4d2b2d427d52ed94f2f6f05e8cf9f7828e9e604d::Test_NFT::TEST_NFT';
 
     /**
      * @var string
      */
     protected string $tokenType =
-    '0xdb2062063e6756bb0c39c1c4a208a8b341f2241d941621ee5c52f00b13e4cb46::Test_USDC::TEST_USDC';
+    '0x669d8724a063f2b8890ba15728366f1acf924d8440909cc0bca4b7d15666068e::tusdc::TUSDC';
+
+    /**
+     * @var string
+     */
+    protected string $nftObjectId = '0xf4a0ab6259e059a5706add99c50d1bd6c3ff23a48753e4bc8b7c6ef0ee9082cb';
 
     /**
      * @return void
      */
     public function setUp(): void
     {
-        $this->client = new Client('https://fullnode.devnet.sui.io:443');
+        $this->client = new Client('https://fullnode.testnet.sui.io:443');
     }
 
     /**
@@ -62,7 +67,7 @@ class ClientTest extends TestCase
     public function testGetBalance(): void
     {
         $response = $this->client->getBalance($this->balanceAddress);
-        $this->assertEquals($response->totalBalance, 100 * 10 ** 9);
+        $this->assertEquals($response->totalBalance, 0.2 * 10 ** 9);
     }
 
     /**
@@ -110,7 +115,7 @@ class ClientTest extends TestCase
     public function testGetCoinMetadata(): void
     {
         $response = $this->client->getCoinMetadata($this->tokenType);
-        $this->assertEquals($response->decimals, 6);
+        $this->assertEquals($response->decimals, 9);
         $this->assertEquals($response->symbol, 'TUSDC');
         $this->assertEquals($response->name, 'Test USDC');
     }
@@ -121,7 +126,7 @@ class ClientTest extends TestCase
     public function testTotalSupply(): void
     {
         $response = $this->client->getTotalSupply($this->tokenType);
-        $this->assertEquals($response, (string) 100000000 * 10 ** 6);
+        $this->assertEquals($response, (string) 10000000 * 10 ** 9);
     }
 
     /**
@@ -129,8 +134,7 @@ class ClientTest extends TestCase
      */
     public function testGetObject(): void
     {
-        $objectId = '0x57f764ca497379aca2553ceaccd319194d8057999554a0d0c0e99805f1d0eb9d';
-        $response = $this->client->getObject($objectId, [
+        $response = $this->client->getObject($this->nftObjectId, [
             "showType" => true,
             "showOwner" => true,
             "showPreviousTransaction" => true,
@@ -152,7 +156,7 @@ class ClientTest extends TestCase
         $response = $this->client->getOwnedObjects($this->balanceAddress);
         $this->assertEquals(
             $response->nextCursor,
-            '0xffdb31461dc8c82c4a267c5a27f8424e1c4cf2f13fc36aff259b813f0201571b'
+            '0xeb8b79684de4534c58755da8bf67472f5b74148f132239d43efc3a83095e20b7'
         );
     }
 
@@ -172,8 +176,7 @@ class ClientTest extends TestCase
      */
     public function testMultiGetObjects(): void
     {
-        $objectId = '0x57f764ca497379aca2553ceaccd319194d8057999554a0d0c0e99805f1d0eb9d';
-        $response = $this->client->multiGetObjects([$objectId], [
+        $response = $this->client->multiGetObjects([$this->nftObjectId], [
             "showType" => true,
             "showOwner" => true,
             "showPreviousTransaction" => true,
@@ -193,7 +196,7 @@ class ClientTest extends TestCase
     public function testGetNormalizedMoveModulesByPackage(): void
     {
         $response = $this->client->getNormalizedMoveModulesByPackage($this->tokenPackage);
-        $this->assertEquals(array_shift($response)->name, 'Test_USDC');
+        $this->assertEquals(array_shift($response)->name, 'tusdc');
     }
 
     /**
@@ -201,8 +204,8 @@ class ClientTest extends TestCase
      */
     public function testGetNormalizedMoveModule(): void
     {
-        $response = $this->client->getNormalizedMoveModule($this->tokenPackage, 'Test_USDC');
-        $this->assertEquals($response->name, 'Test_USDC');
+        $response = $this->client->getNormalizedMoveModule($this->tokenPackage, 'tusdc');
+        $this->assertEquals($response->name, 'tusdc');
     }
 
     /**
@@ -210,7 +213,7 @@ class ClientTest extends TestCase
      */
     public function testGetNormalizedMoveFunction(): void
     {
-        $response = $this->client->getNormalizedMoveFunction($this->tokenPackage, 'Test_USDC', 'init');
+        $response = $this->client->getNormalizedMoveFunction($this->tokenPackage, 'tusdc', 'init');
         $this->assertEquals($response->visibility, 'Private');
     }
 
@@ -219,7 +222,7 @@ class ClientTest extends TestCase
      */
     public function testGetNormalizedMoveStruct(): void
     {
-        $response = $this->client->getNormalizedMoveStruct($this->tokenPackage, 'Test_USDC', 'TEST_USDC');
+        $response = $this->client->getNormalizedMoveStruct($this->tokenPackage, 'tusdc', 'TUSDC');
         $this->assertEquals(in_array('Drop', $response->abilities['abilities']), true);
     }
 
@@ -247,7 +250,7 @@ class ClientTest extends TestCase
             ]
         );
         $this->assertEquals(count($response->data), 1);
-        $this->assertEquals($response->data[0]->digest, 'wSXPaPPJUmS2rJtsAMQnHQanhxUHcixBzPw8yGihTXF');
+        $this->assertEquals($response->data[0]->digest, 'CusvSMa23LQiTtz3cYw7GFf6jWeodCJaoYW2ktd746aC');
     }
 
     /**
@@ -291,8 +294,8 @@ class ClientTest extends TestCase
      */
     public function testGetCheckpoint(): void
     {
-        $response = $this->client->getCheckpoint('1032143');
-        $this->assertEquals($response->sequenceNumber, '1032143');
+        $response = $this->client->getCheckpoint('190342129');
+        $this->assertEquals($response->sequenceNumber, '190342129');
     }
 
     /**
