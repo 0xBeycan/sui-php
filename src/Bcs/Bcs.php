@@ -346,7 +346,7 @@ class Bcs
      */
     public static function vector(Type $type, array $options = []): Type
     {
-        return new Type(
+        return Type::dynamicSize(
             "vector<{$type->getName()}>",
             function (Reader $reader) use ($type): array {
                 $length = $reader->readULEB();
@@ -363,11 +363,11 @@ class Bcs
                 }
             },
             function (mixed $value) use ($options): void {
+                if (isset($options['validate'])) {
+                    ($options['validate'])($value);
+                }
                 if (!is_array($value)) {
                     throw new \TypeError("Expected array, found " . gettype($value));
-                }
-                if ($options['validate'] ?? null) {
-                    ($options['validate'])($value);
                 }
             }
         );
@@ -437,22 +437,26 @@ class Bcs
                 }
             },
             function (mixed $value) use ($options): void {
+                if (isset($options['validate'])) {
+                    ($options['validate'])($value);
+                }
                 if (!is_array($value)) {
                     throw new \TypeError("Expected array, found " . gettype($value));
                 }
-                if ($options['validate'] ?? null) {
-                    ($options['validate'])($value);
-                }
             },
-            function ($value, $options) use ($fields): array {
-                $writer = new Writer($options);
+            $options['serialize'] ?? null,
+            function (mixed $values) use ($fields): ?int {
+                $total = 0;
                 foreach ($fields as $field => $type) {
-                    $type->write($value[$field], $writer);
+                    $size = $type->serializedSize($values[$field]);
+                    if (null === $size) {
+                        return null;
+                    }
+
+                    $total += $size;
                 }
-                return $writer->toBytes();
-            },
-            function (mixed $value): ?int {
-                return null; // Dynamic size for structs with dynamic fields
+
+                return $total;
             }
         );
     }
@@ -498,24 +502,27 @@ class Bcs
                 }
             },
             function (mixed $value) use ($name, $variants, $options): void {
-                if (!is_array($value)) {
-                    throw new \TypeError("Expected array, found " . gettype($value));
+                if (isset($options['validate'])) {
+                    ($options['validate'])($value);
+                }
+                if (!is_array($value) || null === $value) {
+                    throw new \TypeError("Expected object, found " . gettype($value));
                 }
 
-                $keys = array_filter(array_keys($value), fn($k) => '$kind' !== $k && null !== ($value[$k] ?? null));
+                $keys = array_filter(array_keys($value), function ($k) use ($value, $variants) {
+                    return isset($value[$k]) && array_key_exists($k, $variants);
+                });
+
                 if (1 !== count($keys)) {
                     throw new \TypeError(
                         "Expected object with one key, but found " . count($keys) . " for type {$name}"
                     );
                 }
 
-                $variant = $keys[0];
-                if (!isset($variants[$variant])) {
-                    throw new \TypeError("Invalid enum variant {$variant}");
-                }
+                $variant = array_values($keys)[0];
 
-                if (null !== ($options['validate'] ?? null)) {
-                    ($options['validate'])($value);
+                if (!array_key_exists($variant, $variants)) {
+                    throw new \TypeError("Invalid enum variant {$variant}");
                 }
             }
         );

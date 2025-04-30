@@ -46,7 +46,7 @@ class Map
                 function (string|array $value): array {
                     return is_string($value) ? Utils::fromHex(Utils::normalizeSuiAddress($value)) : $value;
                 },
-                function (string $value): string {
+                function (string|array $value): string {
                     return Utils::normalizeSuiAddress(Utils::toHex($value));
                 },
                 function (mixed $value): void {

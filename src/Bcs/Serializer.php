@@ -86,37 +86,37 @@ class Serializer
      */
     public static function tagToString(array $tag): string
     {
-        if (null !== $tag['bool']) {
+        if (isset($tag['bool'])) {
             return 'bool';
         }
-        if (null !== $tag['u8']) {
+        if (isset($tag['u8'])) {
             return 'u8';
         }
-        if (null !== $tag['u16']) {
+        if (isset($tag['u16'])) {
             return 'u16';
         }
-        if (null !== $tag['u32']) {
+        if (isset($tag['u32'])) {
             return 'u32';
         }
-        if (null !== $tag['u64']) {
+        if (isset($tag['u64'])) {
             return 'u64';
         }
-        if (null !== $tag['u128']) {
+        if (isset($tag['u128'])) {
             return 'u128';
         }
-        if (null !== $tag['u256']) {
+        if (isset($tag['u256'])) {
             return 'u256';
         }
-        if (null !== $tag['address']) {
+        if (isset($tag['address'])) {
             return 'address';
         }
-        if (null !== $tag['signer']) {
+        if (isset($tag['signer'])) {
             return 'signer';
         }
-        if (null !== $tag['vector']) {
+        if (isset($tag['vector'])) {
             return 'vector<' . self::tagToString($tag['vector']) . '>';
         }
-        if (null !== $tag['struct']) {
+        if (isset($tag['struct'])) {
             $struct = $tag['struct'];
             $typeParams = array_map(
                 fn($param) => self::tagToString($param),
