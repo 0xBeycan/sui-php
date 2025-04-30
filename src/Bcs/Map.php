@@ -43,12 +43,11 @@ class Map
         return Bcs::bytes(Constants::SUI_ADDRESS_LENGTH)
             ->transform(
                 'Address',
-                function (mixed $value): string {
+                function (mixed $value): void {
                     $value = 'string' === gettype($value) ? $value : Utils::toHex($value);
                     if (!$value || !Utils::isValidSuiAddress(Utils::normalizeSuiAddress($value))) {
                         throw new \Exception('Invalid Sui address');
                     }
-                    return $value;
                 },
                 function (string|array $value): array {
                     return 'string' === gettype($value) ? Utils::fromHex(Utils::normalizeSuiAddress($value)) : $value;

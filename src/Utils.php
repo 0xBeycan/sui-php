@@ -6,31 +6,6 @@ namespace Sui;
 
 class Utils
 {
-    private const ELLIPSIS = "\u2026";
-
-    private const DIGEST_LENGTH = 10;
-
-    private const TX_DIGEST_LENGTH = 32;
-
-    private const SUI_ADDRESS_LENGTH = 32;
-
-    private const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-
-    private const SUI_NS_NAME_REGEX =
-    "/^(?!.*(^(?!@)|[-.@])($|[-.@]))(?:[a-z0-9-]{0,63}(?:\.[a-z0-9-]{0,63})*)?@[a-z0-9-]{0,63}$/i";
-
-    private const SUI_NS_DOMAIN_REGEX = "/^(?!.*(^|[-.])($|[-.]))(?:[a-z0-9-]{0,63}\.)+sui$/i";
-
-    private const MAX_SUI_NS_NAME_LENGTH = 235;
-
-    private const NAME_PATTERN = "/^([a-z0-9]+(?:-[a-z0-9]+)*)$/";
-
-    private const VERSION_REGEX = "/^\d+$/";
-
-    private const MAX_APP_SIZE = 64;
-
-    private const NAME_SEPARATOR = "/";
-
     /**
      * @param string $address The address to format.
      * @return string The formatted address.
@@ -41,7 +16,7 @@ class Utils
             return $address;
         }
         $offset = str_starts_with($address, '0x') ? 2 : 0;
-        return '0x' . substr($address, $offset, 4) . self::ELLIPSIS . substr($address, -4);
+        return '0x' . substr($address, $offset, 4) . Constants::ELLIPSIS . substr($address, -4);
     }
 
     /**
@@ -50,7 +25,7 @@ class Utils
      */
     public static function formatDigest(string $digest): string
     {
-        return substr($digest, 0, self::DIGEST_LENGTH) . self::ELLIPSIS;
+        return substr($digest, 0, Constants::DIGEST_LENGTH) . Constants::ELLIPSIS;
     }
 
     /**
@@ -76,14 +51,14 @@ class Utils
         while (bccomp($value, '0') > 0) {
             $remainder = bcmod($value, '58');
             $value = bcdiv($value, '58', 0);
-            $base58Array[] = self::BASE58_ALPHABET[intval($remainder)];
+            $base58Array[] = Constants::BASE58_ALPHABET[intval($remainder)];
         }
 
         foreach ($input as $byte) {
             if (0 !== $byte) {
                 break;
             }
-            $base58Array[] = self::BASE58_ALPHABET[0];
+            $base58Array[] = Constants::BASE58_ALPHABET[0];
         }
 
         return implode('', array_reverse($base58Array));
@@ -98,7 +73,7 @@ class Utils
     {
         $value = '0';
         for ($i = 0; $i < strlen($input); $i++) {
-            $value = bcadd(bcmul($value, '58'), strval(strpos(self::BASE58_ALPHABET, $input[$i])));
+            $value = bcadd(bcmul($value, '58'), strval(strpos(Constants::BASE58_ALPHABET, $input[$i])));
         }
 
         // Decimal to hexadecimal conversion
@@ -126,7 +101,7 @@ class Utils
     {
         try {
             $buffer = self::fromBase58($value);
-            return self::TX_DIGEST_LENGTH === count($buffer);
+            return Constants::TX_DIGEST_LENGTH === count($buffer);
         } catch (\Exception $e) {
             return false;
         }
@@ -138,7 +113,7 @@ class Utils
      */
     public static function isHex(string $value): bool
     {
-        return 0 === preg_match('/^(0x|0X)?[a-fA-F0-9]+$/', $value) && strlen($value) % 2;
+        return 1 === preg_match('/^(0x|0X)?[a-fA-F0-9]+$/', $value) && 0 === strlen($value) % 2 ;
     }
 
     /**
@@ -170,7 +145,7 @@ class Utils
         if (!$forceAdd0x && str_starts_with($address, '0x')) {
             $address = substr($address, 2);
         }
-        return '0x' . str_pad($address, self::SUI_ADDRESS_LENGTH * 2, '0');
+        return '0x' . str_pad($address, Constants::SUI_ADDRESS_LENGTH * 2, '0');
     }
 
     /**
@@ -189,7 +164,7 @@ class Utils
      */
     public static function isValidSuiAddress(string $value): bool
     {
-        return self::isHex($value) && self::SUI_ADDRESS_LENGTH === self::getHexByteLength($value);
+        return self::isHex($value) && Constants::SUI_ADDRESS_LENGTH === self::getHexByteLength($value);
     }
 
     /**
@@ -253,13 +228,13 @@ class Utils
      */
     public static function isValidSuiNSName(string $value): bool
     {
-        if (strlen($value) > self::MAX_SUI_NS_NAME_LENGTH) {
+        if (strlen($value) > Constants::MAX_SUI_NS_NAME_LENGTH) {
             return false;
         }
         if (str_contains($value, '@')) {
-            return (bool) preg_match(self::SUI_NS_NAME_REGEX, $value);
+            return (bool) preg_match(Constants::SUI_NS_NAME_REGEX, $value);
         }
-        return (bool)preg_match(self::SUI_NS_DOMAIN_REGEX, $value);
+        return (bool)preg_match(Constants::SUI_NS_DOMAIN_REGEX, $value);
     }
 
 
@@ -273,13 +248,13 @@ class Utils
         $lowerCase = strtolower($name);
         $parts = [];
         if (str_contains($lowerCase, '@')) {
-            if (!preg_match(self::SUI_NS_NAME_REGEX, $lowerCase)) {
+            if (!preg_match(Constants::SUI_NS_NAME_REGEX, $lowerCase)) {
                 throw new \Exception(sprintf('Invalid SuiNS name %s', $name));
             }
             [$labels, $domain] = explode('@', $lowerCase);
             $parts = [...($labels ? explode('.', $labels) : []), $domain];
         } else {
-            if (!preg_match(self::SUI_NS_DOMAIN_REGEX, $lowerCase)) {
+            if (!preg_match(Constants::SUI_NS_DOMAIN_REGEX, $lowerCase)) {
                 throw new \Exception(sprintf('Invalid SuiNS name %s', $name));
             }
             $parts = explode('.', $lowerCase);
@@ -297,18 +272,18 @@ class Utils
      */
     public static function isValidNamedPackage(string $name): bool
     {
-        $parts = explode(self::NAME_SEPARATOR, $name);
+        $parts = explode(Constants::NAME_SEPARATOR, $name);
         if (count($parts) < 2 || count($parts) > 3) {
             return false;
         }
         [$org, $app, $version] = $parts;
-        if ($version && !preg_match(self::VERSION_REGEX, $version)) {
+        if ($version && !preg_match(Constants::VERSION_REGEX, $version)) {
             return false;
         }
         if (!self::isValidSuiNSName($org)) {
             return false;
         }
-        return preg_match(self::NAME_PATTERN, $app) && strlen($app) < self::MAX_APP_SIZE;
+        return preg_match(Constants::NAME_PATTERN, $app) && strlen($app) < Constants::MAX_APP_SIZE;
     }
 
     /**
@@ -322,7 +297,7 @@ class Utils
             return false;
         }
         foreach ($splitType as $t) {
-            if (str_contains($t, self::NAME_SEPARATOR) && !self::isValidNamedPackage($t)) {
+            if (str_contains($t, Constants::NAME_SEPARATOR) && !self::isValidNamedPackage($t)) {
                 return false;
             }
         }

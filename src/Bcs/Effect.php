@@ -161,9 +161,12 @@ class Effect
             'SuiMoveVerificationTimedout' => null,
             'SharedObjectOperationNotAllowed' => null,
             'InputObjectDeleted' => null,
-            'ExecutionCancelledDueToSharedObjectCongestion' => Bcs::struct('ExecutionCancelledDueToSharedObjectCongestion', [
-                'congestedObjects' => Bcs::vector(self::address()),
-            ]),
+            'ExecutionCancelledDueToSharedObjectCongestion' => Bcs::struct(
+                'ExecutionCancelledDueToSharedObjectCongestion',
+                [
+                    'congestedObjects' => Bcs::vector(self::address()),
+                ]
+            ),
             'AddressDeniedForCoin' => Bcs::struct('AddressDeniedForCoin', [
                 'address' => self::address(),
                 'coinType' => Bcs::string(),

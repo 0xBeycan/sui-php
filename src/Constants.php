@@ -54,7 +54,63 @@ class Constants
     public const SUI_SYSTEM_STATE_OBJECT_ID = '0x5';
 
     /**
+     * Ellipsis character
+     */
+    public const ELLIPSIS = "\u2026";
+
+    /**
+     * Digest length
+     */
+    public const DIGEST_LENGTH = 10;
+
+    /**
+     * Transaction digest length
+     */
+    public const TX_DIGEST_LENGTH = 32;
+
+    /**
      * SUI address length
      */
     public const SUI_ADDRESS_LENGTH = 32;
+
+    /**
+     * Base58 alphabet
+     */
+    public const BASE58_ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+    /**
+     * SUI NS name regex
+     */
+    public const SUI_NS_NAME_REGEX =
+    "/^(?!.*(^(?!@)|[-.@])($|[-.@]))(?:[a-z0-9-]{0,63}(?:\.[a-z0-9-]{0,63})*)?@[a-z0-9-]{0,63}$/i";
+
+    /**
+     * SUI NS domain regex
+     */
+    public const SUI_NS_DOMAIN_REGEX = "/^(?!.*(^|[-.])($|[-.]))(?:[a-z0-9-]{0,63}\.)+sui$/i";
+
+    /**
+     * Max SUI NS name length
+     */
+    public const MAX_SUI_NS_NAME_LENGTH = 235;
+
+    /**
+     * Name pattern
+     */
+    public const NAME_PATTERN = "/^([a-z0-9]+(?:-[a-z0-9]+)*)$/";
+
+    /**
+     * Version regex
+     */
+    public const VERSION_REGEX = "/^\d+$/";
+
+    /**
+     * Max app size
+     */
+    public const MAX_APP_SIZE = 64;
+
+    /**
+     * Name separator
+     */
+    public const NAME_SEPARATOR = "/";
 }

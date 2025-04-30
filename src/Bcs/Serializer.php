@@ -53,9 +53,9 @@ class Serializer
                     'address' => $address,
                     'module' => $structMatch[2],
                     'name' => $structMatch[3],
-                    'typeParams' => null === $structMatch[5]
-                        ? []
-                        : self::parseStructTypeArgs($structMatch[5], $normalizeAddress)
+                    'typeParams' => isset($structMatch[5]) && !empty($structMatch[5])
+                        ? self::parseStructTypeArgs($structMatch[5], $normalizeAddress)
+                        : []
                 ]
             ];
         }
@@ -68,7 +68,7 @@ class Serializer
      *
      * @param string $str The string to parse
      * @param bool $normalizeAddress Whether to normalize the address
-     * @return array<TypeTag> The parsed type tags
+     * @return array<mixed> The parsed type tags
      */
     public static function parseStructTypeArgs(string $str, bool $normalizeAddress = false): array
     {
