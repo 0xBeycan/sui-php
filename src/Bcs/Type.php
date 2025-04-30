@@ -11,32 +11,38 @@ class Type
     private string $name;
     private \Closure $read;
     private \Closure $write;
-    private \Closure $serialize;
     private \Closure $validate;
+    private \Closure $serialize;
     private \Closure $serializedSize;
 
     /**
      * @param string $name The name of the type
      * @param \Closure $read Function to read the type from a reader
      * @param \Closure $write Function to write the type to a writer
-     * @param \Closure $serialize Function to serialize the type
      * @param \Closure $validate Function to validate the type
+     * @param \Closure $serialize Function to serialize the type
      * @param \Closure $serializedSize Function to get the serialized size
      */
     public function __construct(
         string $name,
         \Closure $read,
         \Closure $write,
-        \Closure $serialize,
         \Closure $validate,
-        \Closure $serializedSize
+        ?\Closure $serialize = null,
+        ?\Closure $serializedSize = null
     ) {
         $this->name = $name;
         $this->read = $read;
         $this->write = $write;
-        $this->serialize = $serialize;
         $this->validate = $validate;
-        $this->serializedSize = $serializedSize;
+        $this->serialize = $serialize ?? function (mixed $value, array $options) use ($write): array {
+            $writer = new Writer($options);
+            $write($value, $writer);
+            return $writer->toBytes();
+        };
+        $this->serializedSize = $serializedSize ?? function (mixed $value): ?int {
+            return null;
+        };
     }
 
     /**
@@ -200,12 +206,12 @@ class Type
             $name,
             $read,
             $write,
+            $validate ?? function (): void {}, // @phpcs:ignore
             function ($value, $options) use ($write): array {
                 $writer = new Writer($options);
                 $write($value, $writer);
                 return $writer->toBytes();
             },
-            $validate ?? function (): void {}, // @phpcs:ignore
             function () use ($size): int {
                 return $size;
             }
@@ -347,12 +353,12 @@ class Type
             function (mixed $value, Writer $writer) use ($init): void {
                 $init()->write($value, $writer);
             },
+            function (mixed $value) use ($init): void {
+                $init()->validate($value);
+            },
             function (mixed $value, array $options) use ($init): array {
                 $serialized = $init()->serialize($value, $options);
                 return array_values(unpack('C*', $serialized->toBytes()) ?: []);
-            },
-            function (mixed $value) use ($init): void {
-                $init()->validate($value);
             },
             function (mixed $value) use ($init): ?int {
                 return $init()->serializedSize($value);
@@ -392,13 +398,13 @@ class Type
                 $originalValidate($transformed);
                 $originalWrite($transformed, $writer);
             },
+            $validate ?? function (mixed $value): void {
+                // No validation at the transformed level
+            },
             function (mixed $value, array $options) use ($originalSerialize, $input, $originalValidate): array {
                 $transformed = $input ? $input($value) : $value;
                 $originalValidate($transformed);
                 return ($originalSerialize)($transformed, $options);
-            },
-            $validate ?? function (mixed $value): void {
-                // No validation at the transformed level
             },
             function (mixed $value) use ($originalSerializedSize, $input): ?int {
                 $transformed = $input ? $input($value) : $value;
@@ -423,12 +429,12 @@ class Type
             $name,
             $read,
             $write,
+            $validate ?? function (): void {}, // @phpcs:ignore
             function ($value, $options) use ($write): array {
                 $writer = new Writer($options);
                 $write($value, $writer);
                 return $writer->toBytes();
             },
-            $validate ?? function (): void {},// @phpcs:ignore
             function (): ?int {
                 return null;
             }

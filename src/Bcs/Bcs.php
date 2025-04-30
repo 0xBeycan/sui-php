@@ -346,8 +346,8 @@ class Bcs
      */
     public static function vector(Type $type, array $options = []): Type
     {
-        return Type::dynamicSize(
-            $options['name'] ?? 'vector',
+        return new Type(
+            "vector<{$type->getName()}>",
             function (Reader $reader) use ($type): array {
                 $length = $reader->readULEB();
                 $result = [];
@@ -436,13 +436,6 @@ class Bcs
                     $type->write($value[$field], $writer);
                 }
             },
-            function ($value, $options) use ($fields): array {
-                $writer = new Writer($options);
-                foreach ($fields as $field => $type) {
-                    $type->write($value[$field], $writer);
-                }
-                return $writer->toBytes();
-            },
             function (mixed $value) use ($options): void {
                 if (!is_array($value)) {
                     throw new \TypeError("Expected array, found " . gettype($value));
@@ -450,6 +443,13 @@ class Bcs
                 if ($options['validate'] ?? null) {
                     ($options['validate'])($value);
                 }
+            },
+            function ($value, $options) use ($fields): array {
+                $writer = new Writer($options);
+                foreach ($fields as $field => $type) {
+                    $type->write($value[$field], $writer);
+                }
+                return $writer->toBytes();
             },
             function (mixed $value): ?int {
                 return null; // Dynamic size for structs with dynamic fields
