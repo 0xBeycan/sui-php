@@ -113,7 +113,7 @@ class Utils
      */
     public static function isHex(string $value): bool
     {
-        return 1 === preg_match('/^(0x|0X)?[a-fA-F0-9]+$/', $value) && 0 === strlen($value) % 2 ;
+        return 1 === preg_match('/^(0x|0X)?[a-fA-F0-9]+$/', $value) && 0 === strlen($value) % 2;
     }
 
     /**
@@ -182,17 +182,26 @@ class Utils
      */
     public static function parseStructTag(string $value): object
     {
-        $address = substr($value, 0, strpos($value, '::') ?: 0);
-        $module = substr(
-            $value,
-            strpos($value, '::') + 2,
-            strpos($value, '::', strpos($value, '::') + 2) - strpos($value, '::') - 2
-        );
-        $name = substr($value, strrpos($value, '::') + 2);
+        [$address, $module] = explode('::', $value);
+
+        $isMvrPackage = self::isValidNamedPackage($address);
+
+        $rest = substr($value, strlen($address) + strlen($module) + 4);
+        $name = str_contains($rest, '<') ? substr($rest, 0, strpos($rest, '<')) : $rest;
+        $typeParams = str_contains($rest, '<')
+            ? array_map(
+                fn($typeParam) => self::parseTypeTag(trim($typeParam)),
+                self::splitGenericParameters(
+                    substr($rest, strpos($rest, '<') + 1, strrpos($rest, '>') - strpos($rest, '<') - 1)
+                )
+            )
+            : [];
+
         return (object)[
-            'address' => self::normalizeSuiAddress($address),
+            'address' => $isMvrPackage ? $address : self::normalizeSuiAddress($address),
             'module' => $module,
             'name' => $name,
+            'typeParams' => $typeParams,
         ];
     }
 
@@ -218,8 +227,17 @@ class Utils
      */
     public static function normalizeStructTag(string $value): string
     {
-        $structTag = self::parseStructTag($value);
-        return sprintf('%s::%s::%s', $structTag->address, $structTag->module, $structTag->name);
+        $structTag = is_string($value) ? self::parseStructTag($value) : $value;
+        $formattedTypeParams = '';
+
+        if (!empty($structTag->typeParams)) {
+            $formattedTypeParams = '<' . implode(',', array_map(
+                fn($typeParam) => is_string($typeParam) ? $typeParam : self::normalizeStructTag($typeParam),
+                $structTag->typeParams
+            )) . '>';
+        }
+
+        return sprintf('%s::%s::%s%s', $structTag->address, $structTag->module, $structTag->name, $formattedTypeParams);
     }
 
     /**

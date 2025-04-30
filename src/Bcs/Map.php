@@ -43,17 +43,17 @@ class Map
         return Bcs::bytes(Constants::SUI_ADDRESS_LENGTH)
             ->transform(
                 'Address',
-                function (mixed $value): void {
-                    $value = 'string' === gettype($value) ? $value : Utils::toHex($value);
-                    if (!$value || !Utils::isValidSuiAddress(Utils::normalizeSuiAddress($value))) {
-                        throw new \Exception('Invalid Sui address');
-                    }
-                },
                 function (string|array $value): array {
-                    return 'string' === gettype($value) ? Utils::fromHex(Utils::normalizeSuiAddress($value)) : $value;
+                    return is_string($value) ? Utils::fromHex(Utils::normalizeSuiAddress($value)) : $value;
                 },
                 function (string $value): string {
                     return Utils::normalizeSuiAddress(Utils::toHex($value));
+                },
+                function (mixed $value): void {
+                    $value = is_string($value) ? $value : Utils::toHex($value);
+                    if (!$value || !Utils::isValidSuiAddress(Utils::normalizeSuiAddress($value))) {
+                        throw new \Exception('Invalid Sui address');
+                    }
                 }
             );
     }
@@ -146,7 +146,7 @@ class Map
                 'bytes' => Bcs::vector(Bcs::u8())->transform(
                     'bytes',
                     function (mixed $value): array {
-                        return 'string' === gettype($value) ? Utils::fromBase64($value) : $value;
+                        return is_string($value) ? Utils::fromBase64($value) : $value;
                     },
                     function (array $value): string {
                         return Utils::toBase64($value);
@@ -185,7 +185,7 @@ class Map
         return self::innerTypeTag()->transform(
             'InnerTypeTag',
             function (mixed $value): array {
-                return 'string' === gettype($value) ? Serializer::parseFromStr($value) : $value;
+                return is_string($value) ? Serializer::parseFromStr($value) : $value;
             },
             function (array $value): string {
                 return Serializer::tagToString($value);
@@ -244,7 +244,7 @@ class Map
                     Bcs::vector(Bcs::u8())->transform(
                         'modules',
                         function (mixed $value): array {
-                            return 'string' === gettype($value) ? Utils::fromBase64($value) : $value;
+                            return is_string($value) ? Utils::fromBase64($value) : $value;
                         },
                         function (array $value): string {
                             return Utils::toBase64($value);
@@ -270,7 +270,7 @@ class Map
                     Bcs::vector(Bcs::u8())->transform(
                         'modules',
                         function (mixed $value): array {
-                            return 'string' === gettype($value) ? Utils::fromBase64($value) : $value;
+                            return is_string($value) ? Utils::fromBase64($value) : $value;
                         },
                         function (array $value): string {
                             return Utils::toBase64($value);
@@ -493,7 +493,7 @@ class Map
         return Bcs::vector(Bcs::u8())->transform(
             'base64String',
             function (mixed $value): array {
-                return 'string' === gettype($value) ? Utils::fromBase64($value) : $value;
+                return is_string($value) ? Utils::fromBase64($value) : $value;
             },
             function (array $value): string {
                 return Utils::toBase64($value);
