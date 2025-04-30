@@ -15,7 +15,7 @@
         }
     },
     "scripts": {
-        "test": "phpunit",
+        "test": "php vendor/bin/phpunit",
         "phpcs": "phpcs --standard=phpcs.xml .",
         "phpcbf": "phpcbf --standard=phpcs.xml .",
         "coverage": "phpunit --coverage-clover=coverage/clover.xml",

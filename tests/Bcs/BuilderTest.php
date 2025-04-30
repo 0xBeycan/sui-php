@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sui\Tests;
+namespace Sui\Tests\Bcs;
 
 use PHPUnit\Framework\TestCase;
 use Sui\Bcs\Bcs;
@@ -11,7 +11,7 @@ use Sui\Bcs\Type;
 use Sui\Bcs\Writer as BcsWriter;
 use Sui\Utils;
 
-class BcsBuilderTest extends TestCase
+class BuilderTest extends TestCase
 {
     /**
      * Test base types

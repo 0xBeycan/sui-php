@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Sui\Tests;
+namespace Sui\Tests\Bcs;
 
 use PHPUnit\Framework\TestCase;
 use Sui\Bcs\Bcs;
 
-class BcsTest extends TestCase
+class BasicTest extends TestCase
 {
     /**
      * Test that BCS supports growing size when serializing data

@@ -52,4 +52,9 @@ class Constants
      * Note: Original JS uses normalizeSuiObjectId function
      */
     public const SUI_SYSTEM_STATE_OBJECT_ID = '0x5';
+
+    /**
+     * SUI address length
+     */
+    public const SUI_ADDRESS_LENGTH = 32;
 }

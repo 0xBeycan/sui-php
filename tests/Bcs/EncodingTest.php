@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Sui\Tests;
+namespace Sui\Tests\Bcs;
 
 use PHPUnit\Framework\TestCase;
 use Sui\Bcs\Bcs;
 use Sui\Utils;
 
-class BcsEncodingTest extends TestCase
+class EncodingTest extends TestCase
 {
     /**
      * Tests deserialization of hex, base58 and base64 encoded data.
