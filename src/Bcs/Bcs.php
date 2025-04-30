@@ -422,25 +422,23 @@ class Bcs
      */
     public static function struct(string $name, array $fields, array $options = []): Type
     {
-        $canonicalOrder = array_entries($fields);
-
         return new Type(
             $name,
-            function (Reader $reader) use ($canonicalOrder): array {
+            function (Reader $reader) use ($fields): array {
                 $result = [];
-                foreach ($canonicalOrder as [$field, $type]) {
+                foreach ($fields as $field => $type) {
                     $result[$field] = $type->read($reader);
                 }
                 return $result;
             },
-            function (array $value, Writer $writer) use ($canonicalOrder): void {
-                foreach ($canonicalOrder as [$field, $type]) {
+            function (array $value, Writer $writer) use ($fields): void {
+                foreach ($fields as $field => $type) {
                     $type->write($value[$field], $writer);
                 }
             },
-            function ($value, $options) use ($canonicalOrder): array {
+            function ($value, $options) use ($fields): array {
                 $writer = new Writer($options);
-                foreach ($canonicalOrder as [$field, $type]) {
+                foreach ($fields as $field => $type) {
                     $type->write($value[$field], $writer);
                 }
                 return $writer->toBytes();
@@ -463,34 +461,35 @@ class Bcs
      * Creates a Type representing an enum of a given set of options
      *
      * @param string $name The name of the enum
-     * @param array<string,Type|null> $variants The variants of the enum
+     * @param array<string,Type> $variants The variants of the enum
      * @param array{validate?: \Closure} $options Optional options
      * @return Type The created Type instance
      */
     public static function enum(string $name, array $variants, array $options = []): Type
     {
-        $canonicalOrder = array_entries($variants);
-
+        $variantKeys = array_keys($variants);
         return Type::dynamicSize(
             $name,
-            function (Reader $reader) use ($canonicalOrder, $name): array {
+            function (Reader $reader) use ($variants, $variantKeys, $name): array {
                 $index = $reader->readULEB();
-                if (!isset($canonicalOrder[$index])) {
+                if (!isset($variantKeys[$index])) {
                     throw new \TypeError("Unknown value {$index} for enum {$name}");
                 }
 
-                [$kind, $type] = $canonicalOrder[$index];
+                $kind = $variantKeys[$index];
+                $type = $variants[$kind];
                 return [
                     $kind => $type?->read($reader) ?? true,
                     '$kind' => $kind,
                 ];
             },
-            function (array $value, Writer $writer) use ($canonicalOrder): void {
+            function (array $value, Writer $writer) use ($variants, $variantKeys): void {
                 $variant = array_filter($value, fn($k) => '$kind' !== $k, ARRAY_FILTER_USE_KEY);
                 $variantName = key($variant);
                 $variantValue = current($variant);
 
-                foreach ($canonicalOrder as $i => [$kind, $type]) {
+                foreach ($variantKeys as $i => $kind) {
+                    $type = $variants[$kind];
                     if ($kind === $variantName) {
                         $writer->writeULEB($i);
                         $type?->write($variantValue, $writer);
@@ -560,18 +559,4 @@ class Bcs
     {
         return Type::lazy($cb);
     }
-}
-
-/**
- * Helper function to get array entries with keys
- *
- * @param array<mixed,mixed> $array The array to get entries from
- * @return array<array{0:mixed,1:mixed}> An array of [key, value] pairs
- */
-function array_entries(array $array): array
-{
-    return array_map(
-        fn($key) => [$key, $array[$key]],
-        array_keys($array)
-    );
 }
