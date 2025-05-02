@@ -472,9 +472,9 @@ class Client
                 'client' => $this,
                 'onlyTransactionKind' => true
             ]);
-            return base64_encode(serialize($buildedTx));
+            return Utils::toBase64($buildedTx);
         } elseif (is_array($transactionBlock)) {
-            return base64_encode(serialize($transactionBlock));
+            return Utils::toBase64($transactionBlock);
         } elseif (is_string($transactionBlock)) {
             return $transactionBlock;
         } else {
