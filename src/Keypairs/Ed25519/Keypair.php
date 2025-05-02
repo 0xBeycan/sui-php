@@ -216,9 +216,10 @@ class Keypair extends BaseKeypair
         }
 
         $seed = Mnemonics::mnemonicToSeedHex($mnemonics);
-        $key = HdKey::derivePath($path, $seed)['key'];
+        $derivedKey = HdKey::derivePath($path, $seed)['key'];
+        $keyBytes = array_values(unpack('C*', $derivedKey));
 
-        return self::fromSecretKey($key);
+        return self::fromSecretKey($keyBytes);
     }
 
     /**

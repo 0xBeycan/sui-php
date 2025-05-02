@@ -193,4 +193,14 @@ class Ed25519Test extends TestCase
         $this->assertTrue($keypair->getPublicKey()->verify($message2Bytes, $signature2));
         $this->assertFalse($keypair->getPublicKey()->verify($message1Bytes, $signature2));
     }
+
+    /**
+     * Tests that keypair can be created from mnemonic
+     * @return void
+     */
+    public function testCreateKeypairFromMnemonic(): void
+    {
+        $keypair = Keypair::deriveKeypair(self::TEST_MNEMONIC);
+        $this->assertEquals(self::TEST_PUBLIC_KEY, $keypair->toSuiAddress());
+    }
 }
