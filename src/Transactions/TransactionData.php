@@ -25,11 +25,11 @@ class TransactionData
 {
     private const VERSION = '2';
 
-    protected string $sender;
+    protected ?string $sender;
 
-    private GasData $gasData;
+    protected GasData $gasData;
 
-    private Expiration $expiration;
+    protected ?Expiration $expiration;
 
     /**
      * @var array<CallArg>
@@ -42,24 +42,24 @@ class TransactionData
     private array $commands;
 
     /**
-     * @param string $sender
-     * @param GasData $gasData
-     * @param Expiration $expiration
-     * @param array<CallArg> $inputs
-     * @param array<Command> $commands
+     * @param string|null $sender
+     * @param GasData|null $gasData
+     * @param Expiration|null $expiration
+     * @param array<CallArg>|null $inputs
+     * @param array<Command>|null $commands
      */
     public function __construct(
-        string $sender,
-        GasData $gasData,
-        Expiration $expiration,
-        array $inputs,
-        array $commands
+        ?string $sender = null,
+        ?GasData $gasData = null,
+        ?Expiration $expiration = null,
+        ?array $inputs = null,
+        ?array $commands = null
     ) {
         $this->sender = $sender;
-        $this->gasData = $gasData;
         $this->expiration = $expiration;
-        $this->inputs = $inputs;
-        $this->commands = $commands;
+        $this->inputs = $inputs ?? [];
+        $this->commands = $commands ?? [];
+        $this->gasData = $gasData ?? new GasData();
     }
 
     /**
@@ -91,9 +91,9 @@ class TransactionData
     }
 
     /**
-     * @return string
+     * @return string|null
      */
-    public function getSender(): string
+    public function getSender(): ?string
     {
         return $this->sender;
     }
@@ -120,14 +120,14 @@ class TransactionData
      */
     public function getExpiration(): Expiration
     {
-        return $this->expiration;
+        return $this->expiration ?? new Expiration('');
     }
 
     /**
-     * @param Expiration $expiration
+     * @param Expiration|null $expiration
      * @return void
      */
-    public function setExpiration(Expiration $expiration): void
+    public function setExpiration(?Expiration $expiration): void
     {
         $this->expiration = $expiration;
     }
@@ -174,8 +174,8 @@ class TransactionData
         return [
             'sender' => $this->sender,
             'gasData' => $this->gasData->toArray(),
-            'expiration' => $this->expiration->toArray(),
             'inputs' => array_map(fn(CallArg $input) => $input->toArray(), $this->inputs),
+            'expiration' => $this->expiration ? $this->expiration->toArray() : ['None' => true],
             'commands' => array_map(fn(Command $command) => $command->toArray(), $this->commands),
         ];
     }
@@ -405,7 +405,7 @@ class TransactionData
     }
 
     /**
-     * @param 'object'|'pure' $type
+     * @param string $type
      * @param CallArg $arg
      * @return array<string, int|string>
      */

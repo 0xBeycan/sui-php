@@ -25,4 +25,16 @@ class BuildTransactionOptions
         $this->client = $client;
         $this->onlyTransactionKind = $onlyTransactionKind;
     }
+
+    /**
+     * @param array<string, mixed> $options
+     * @return self
+     */
+    public static function fromArray(array $options): self
+    {
+        return new self(
+            $options['client'] ?? null,
+            $options['onlyTransactionKind'] ?? null
+        );
+    }
 }

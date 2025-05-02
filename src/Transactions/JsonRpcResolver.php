@@ -122,6 +122,9 @@ class JsonRpcResolver
     {
         if (!$transactionData->getGasData()->getPayment()) {
             $owner = $transactionData->getGasData()->getOwner() ?? $transactionData->getSender();
+            if (!$owner) {
+                throw new \Exception('No owner found for the transaction.');
+            }
             $coins = $this->client->getCoins($owner, Constants::SUI_TYPE_ARG);
 
             $paymentCoins = array_filter($coins->data, function ($coin) use ($transactionData) {

@@ -551,4 +551,13 @@ class Utils
         // Convert hash back to array of integers
         return array_values(unpack('C*', $hash) ?: []);
     }
+
+    /**
+     * @param string $value
+     * @return bool
+     */
+    public static function isBase64(string $value): bool
+    {
+        return 1 === preg_match('/^[A-Za-z0-9+\/=]+$/', $value);
+    }
 }

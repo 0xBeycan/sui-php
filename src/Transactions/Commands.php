@@ -12,7 +12,9 @@ use Sui\Transactions\Commands\MergeCoins;
 use Sui\Transactions\Commands\Publish;
 use Sui\Transactions\Commands\Upgrade;
 use Sui\Transactions\Commands\MakeMoveVec;
+use Sui\Transactions\Commands\Intent;
 use Sui\Transactions\Type\Argument;
+use Sui\Transactions\Data\Internal;
 
 class Commands
 {
@@ -125,19 +127,22 @@ class Commands
 
     /**
      * @param array<mixed> $input The input parameters for the intent
-     * @return array<mixed>
+     * @return Intent
      */
-    public static function intent(array $input): array
+    public static function intent(array $input): Intent
     {
         $inputs = [];
         foreach ($input['inputs'] ?? [] as $key => $value) {
-            $inputs[$key] = is_array($value) ? $value : [$value];
+            $inputs[$key] = is_array($value)
+                ? array_map(fn(array $o) => Internal::normalizeArgument($o), $value)
+                // @phpstan-ignore-next-line
+                : Internal::normalizeArgument($value);
         }
 
-        return [
-            'name' => $input['name'],
-            'inputs' => $inputs,
-            'data' => $input['data'] ?? []
-        ];
+        return new Intent(
+            $input['name'],
+            $inputs,
+            $input['data'] ?? []
+        );
     }
 }
