@@ -29,6 +29,15 @@ class Serialized
     }
 
     /**
+     * Returns the bytes as an array of integers
+     * @return array<int> The bytes as an array of integers
+     */
+    public function toArray(): array
+    {
+        return array_values(unpack('C*', $this->bytes) ?: []);
+    }
+
+    /**
      * Converts the bytes to a hexadecimal string
      * @return string The hexadecimal representation of the bytes
      */

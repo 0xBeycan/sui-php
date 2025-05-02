@@ -529,10 +529,6 @@ class Utils
      */
     public static function hashTypedData(string $type, array $data): array
     {
-        if (!extension_loaded('sodium')) {
-            throw new \RuntimeException('The sodium extension is required for Blake2b hashing');
-        }
-
         // Convert type tag to bytes
         $typeTagBytes = array_map(
             fn($char) => ord($char),
@@ -545,11 +541,32 @@ class Utils
         // Convert array to binary string
         $binaryData = implode(array_map('chr', $dataWithTag));
 
-        // Hash using Blake2b with 32 byte output length
-        $hash = sodium_crypto_generichash($binaryData, '', 32);
+        return self::blake2b($binaryData, 32);
+    }
 
-        // Convert hash back to array of integers
+    /**
+     * @param string $data
+     * @param int $outputLength
+     * @return array<int>
+     */
+    public static function blake2b(string $data, int $outputLength = 32): array
+    {
+        if (!extension_loaded('sodium')) {
+            throw new \RuntimeException('The sodium extension is required for Blake2b hashing');
+        }
+
+        $hash = sodium_crypto_generichash($data, '', $outputLength);
+
         return array_values(unpack('C*', $hash) ?: []);
+    }
+
+    /**
+     * @param array<int> $bytes
+     * @return string
+     */
+    public static function bytesToHex(array $bytes): string
+    {
+        return bin2hex(implode(array_map('chr', $bytes)));
     }
 
     /**

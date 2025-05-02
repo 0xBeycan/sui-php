@@ -40,6 +40,8 @@
         }
     },
     "require": {
-        "guzzlehttp/guzzle": "^7.0"
+        "guzzlehttp/guzzle": "^7.0",
+        "furqansiddiqui/bip39-mnemonic-php": "^0.2.1",
+        "bitwasp/bech32": "^0.0.1"
     }
 }

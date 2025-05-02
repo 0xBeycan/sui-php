@@ -4,8 +4,190 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a7f21f4565503679aa6f6d94feb4395e",
+    "content-hash": "ee07a61d62104ea7528e34051fb70569",
     "packages": [
+        {
+            "name": "bitwasp/bech32",
+            "version": "v0.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Bit-Wasp/bech32.git",
+                "reference": "e1ea58c848a4ec59d81b697b3dfe9cc99968d0e7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Bit-Wasp/bech32/zipball/e1ea58c848a4ec59d81b697b3dfe9cc99968d0e7",
+                "reference": "e1ea58c848a4ec59d81b697b3dfe9cc99968d0e7",
+                "shasum": ""
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^5.4.0",
+                "squizlabs/php_codesniffer": "^2.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "src/bech32.php"
+                ],
+                "psr-4": {
+                    "BitWasp\\Bech32\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "Unlicense"
+            ],
+            "authors": [
+                {
+                    "name": "Thomas Kerin",
+                    "homepage": "https://thomaskerin.io",
+                    "role": "Author"
+                }
+            ],
+            "description": "Pure (no dependencies) implementation of bech32",
+            "homepage": "https://github.com/bit-wasp/bech32",
+            "support": {
+                "issues": "https://github.com/Bit-Wasp/bech32/issues",
+                "source": "https://github.com/Bit-Wasp/bech32/tree/more-tests"
+            },
+            "time": "2018-02-05T22:23:47+00:00"
+        },
+        {
+            "name": "charcoal-dev/buffers",
+            "version": "0.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/charcoal-dev/buffers.git",
+                "reference": "3ff43a0bf1df3297d0d0dc2df68a2429306d006a"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/charcoal-dev/buffers/zipball/3ff43a0bf1df3297d0d0dc2df68a2429306d006a",
+                "reference": "3ff43a0bf1df3297d0d0dc2df68a2429306d006a",
+                "shasum": ""
+            },
+            "require": {
+                "charcoal-dev/gmp-adapter": "^0.0.1",
+                "ext-gmp": "*",
+                "php": "^8.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Charcoal\\Buffers\\": [
+                        "src"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Furqan A. Siddiqui",
+                    "email": "hello@furqansiddiqui.com",
+                    "homepage": "https://www.furqansiddiqui.com",
+                    "role": "Author"
+                }
+            ],
+            "description": "Byte Array Buffers for Charcoal PHP Apps",
+            "homepage": "https://github.com/charcoal-dev/buffers",
+            "support": {
+                "issues": "https://github.com/charcoal-dev/buffers/issues",
+                "source": "https://github.com/charcoal-dev/buffers/tree/0.1.0"
+            },
+            "time": "2024-08-04T12:41:41+00:00"
+        },
+        {
+            "name": "charcoal-dev/gmp-adapter",
+            "version": "0.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/charcoal-dev/gmp-adapter.git",
+                "reference": "35f72a52eb3c9f9cc1eace85431a1c4467f5dfd8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/charcoal-dev/gmp-adapter/zipball/35f72a52eb3c9f9cc1eace85431a1c4467f5dfd8",
+                "reference": "35f72a52eb3c9f9cc1eace85431a1c4467f5dfd8",
+                "shasum": ""
+            },
+            "require": {
+                "ext-gmp": "*",
+                "php": "^8.1"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Charcoal\\Adapters\\GMP\\": [
+                        "src"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Furqan A. Siddiqui",
+                    "email": "hello@furqansiddiqui.com",
+                    "homepage": "https://www.furqansiddiqui.com",
+                    "role": "Author"
+                }
+            ],
+            "description": "Provides BigInteger class to Charcoal Apps",
+            "homepage": "https://github.com/charcoal-dev/gmp-adapter",
+            "support": {
+                "issues": "https://github.com/charcoal-dev/gmp-adapter/issues",
+                "source": "https://github.com/charcoal-dev/gmp-adapter/tree/0.0.1"
+            },
+            "time": "2023-08-11T11:54:13+00:00"
+        },
+        {
+            "name": "furqansiddiqui/bip39-mnemonic-php",
+            "version": "0.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/furqansiddiqui/bip39-mnemonic-php.git",
+                "reference": "959737534d36acc63aa4f2c2dc7fdab3e0246b91"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/furqansiddiqui/bip39-mnemonic-php/zipball/959737534d36acc63aa4f2c2dc7fdab3e0246b91",
+                "reference": "959737534d36acc63aa4f2c2dc7fdab3e0246b91",
+                "shasum": ""
+            },
+            "require": {
+                "charcoal-dev/buffers": "^0.1.0",
+                "ext-mbstring": "*",
+                "php-64bit": "^8.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "FurqanSiddiqui\\BIP39\\": [
+                        "src"
+                    ]
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "BIP39 Mnemonics implementation in PHP",
+            "keywords": [
+                "BIP-0039",
+                "bip39",
+                "mnemonics"
+            ],
+            "support": {
+                "issues": "https://github.com/furqansiddiqui/bip39-mnemonic-php/issues",
+                "source": "https://github.com/furqansiddiqui/bip39-mnemonic-php/tree/0.2.1"
+            },
+            "time": "2024-08-04T14:24:32+00:00"
+        },
         {
             "name": "guzzlehttp/guzzle",
             "version": "7.9.3",
