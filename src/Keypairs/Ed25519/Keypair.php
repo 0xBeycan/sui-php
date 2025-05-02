@@ -57,8 +57,8 @@ class Keypair extends BaseKeypair
         $publicKey = ParagonIE_Sodium_Compat::crypto_sign_publickey($keypair);
         $secretKey = ParagonIE_Sodium_Compat::crypto_sign_secretkey($keypair);
         return new KeypairData(
-            self::sodiumStringToBytes($publicKey),
-            self::sodiumStringToBytes($secretKey)
+            self::stringToBytes($publicKey),
+            self::stringToBytes($secretKey)
         );
     }
 
@@ -68,7 +68,7 @@ class Keypair extends BaseKeypair
      * @param string $string
      * @return array<int>
      */
-    private static function sodiumStringToBytes(string $string): array
+    private static function stringToBytes(string $string): array
     {
         return array_values(unpack('C*', $string) ?: []);
     }
@@ -128,8 +128,8 @@ class Keypair extends BaseKeypair
 
         // Create KeypairData with the correct format
         $keypairData = new KeypairData(
-            self::sodiumStringToBytes($publicKey),
-            self::sodiumStringToBytes(ParagonIE_Sodium_Compat::crypto_sign_secretkey($keypair))
+            self::stringToBytes($publicKey),
+            self::stringToBytes(ParagonIE_Sodium_Compat::crypto_sign_secretkey($keypair))
         );
 
         if (!isset($options['skipValidation']) || !$options['skipValidation']) {
@@ -244,7 +244,8 @@ class Keypair extends BaseKeypair
         }
 
         $key = HdKey::derivePath($path, $seedHex)['key'];
+        $keyBytes = array_values(unpack('C*', $key));
 
-        return self::fromSecretKey($key);
+        return self::fromSecretKey($keyBytes);
     }
 }

@@ -7,7 +7,7 @@ namespace Sui\Tests\Keypairs\Ed25519;
 use PHPUnit\Framework\TestCase;
 use Sui\Keypairs\Ed25519\HdKey;
 use Sui\Keypairs\Ed25519\Keypair;
-use Sui\Keypairs\Ed25519\PublicKey;
+use Sui\Cryptography\Mnemonics;
 
 class Ed25519Test extends TestCase
 {
@@ -164,6 +164,18 @@ class Ed25519Test extends TestCase
     }
 
     /**
+     * Tests that keypair can be generated
+     * @return void
+     */
+    public function testGenerateKeypair(): void
+    {
+        $keypair = Keypair::generate();
+        $keypair2 = Keypair::fromSecretKey($keypair->getSecretKey());
+        $this->assertEquals($keypair->getSecretKey(), $keypair2->getSecretKey());
+        $this->assertEquals($keypair->getPublicKey(), $keypair2->getPublicKey());
+    }
+
+    /**
      * Tests that keypair can sign and verify messages
      * @return void
      */
@@ -201,6 +213,17 @@ class Ed25519Test extends TestCase
     public function testCreateKeypairFromMnemonic(): void
     {
         $keypair = Keypair::deriveKeypair(self::TEST_MNEMONIC);
+        $this->assertEquals(self::TEST_PUBLIC_KEY, $keypair->toSuiAddress());
+    }
+
+    /**
+     * Tests that keypair can be created from seed
+     * @return void
+     */
+    public function testCreateKeypairFromSeed(): void
+    {
+        $seed = Mnemonics::mnemonicToSeedHex(self::TEST_MNEMONIC);
+        $keypair = Keypair::deriveKeypairFromSeed($seed);
         $this->assertEquals(self::TEST_PUBLIC_KEY, $keypair->toSuiAddress());
     }
 }
