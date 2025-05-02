@@ -190,7 +190,7 @@ class Keypair extends BaseKeypair
             )
         );
         $signature = ParagonIE_Sodium_Compat::crypto_sign_detached($message, $secretKey);
-        return array_values(unpack('C*', $signature));
+        return array_values(unpack('C*', $signature) ?: []);
     }
 
     /**
@@ -217,7 +217,7 @@ class Keypair extends BaseKeypair
 
         $seed = Mnemonics::mnemonicToSeedHex($mnemonics);
         $derivedKey = HdKey::derivePath($path, $seed)['key'];
-        $keyBytes = array_values(unpack('C*', $derivedKey));
+        $keyBytes = array_values(unpack('C*', $derivedKey) ?: []);
 
         return self::fromSecretKey($keyBytes);
     }
@@ -244,7 +244,7 @@ class Keypair extends BaseKeypair
         }
 
         $key = HdKey::derivePath($path, $seedHex)['key'];
-        $keyBytes = array_values(unpack('C*', $key));
+        $keyBytes = array_values(unpack('C*', $key) ?: []);
 
         return self::fromSecretKey($keyBytes);
     }
