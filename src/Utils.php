@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sui;
 
+use ParagonIE_Sodium_Compat;
+
 class Utils
 {
     /**
@@ -551,11 +553,7 @@ class Utils
      */
     public static function blake2b(string $data, int $outputLength = 32): array
     {
-        if (!extension_loaded('sodium')) {
-            throw new \RuntimeException('The sodium extension is required for Blake2b hashing');
-        }
-
-        $hash = sodium_crypto_generichash($data, '', $outputLength);
+        $hash = ParagonIE_Sodium_Compat::crypto_generichash($data, '', $outputLength);
 
         return array_values(unpack('C*', $hash) ?: []);
     }
