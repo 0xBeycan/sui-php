@@ -6,7 +6,7 @@ namespace Sui\Transactions\Commands;
 
 use Sui\Transactions\Type\Argument;
 
-class MakeMoveVec
+class MakeMoveVec extends Command
 {
     /**
      * @param array<Argument> $elements

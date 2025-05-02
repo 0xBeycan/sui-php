@@ -35,6 +35,16 @@ class NormalizerTest extends TestCase
     private const ADDRESS = '0x63a7cc78f0506be86fcec6b602695141c6d39001b11444bbe37ba189616dfe59';
 
     /**
+     * @return void
+     */
+    public function setUp(): void
+    {
+        parent::setUp();
+        error_reporting(E_ALL);
+        ini_set('display_errors', '1');
+    }
+
+    /**
      * @test
      * @return void
      */
@@ -184,6 +194,81 @@ class NormalizerTest extends TestCase
         ];
         $result = Normalizer::moveCall($options);
         $this->assertInstanceOf(MoveCall::class, $result);
+    }
+
+    /**
+     * @return void
+     */
+    public function testCommandType(): void
+    {
+        $options = [
+            'MoveCall' => [
+                'package' => self::ADDRESS,
+                'module' => 'test',
+                'function' => 'test',
+                'typeArguments' => [],
+                'arguments' => [['test' => 'value']],
+                '_argumentTypes' => [
+                    ['body' => 'test', 'ref' => 'reference']
+                ]
+            ]
+        ];
+        $result = Normalizer::command($options);
+        $this->assertEquals('MoveCall', $result->getKind());
+        $this->assertInstanceOf(Command::class, $result);
+        $this->assertInstanceOf(MoveCall::class, $result->value);
+        $this->assertInstanceOf(MoveCall::class, $result->MoveCall); // @phpcs:ignore
+    }
+
+        /**
+     * @return void
+     */
+    public function testCommandTypeRef(): void
+    {
+        $options = [
+            'MoveCall' => [
+                'package' => self::ADDRESS,
+                'module' => 'test',
+                'function' => 'test',
+                'typeArguments' => [],
+                'arguments' => [['test' => 'value']],
+                '_argumentTypes' => [
+                    ['body' => 'test', 'ref' => 'reference']
+                ]
+            ]
+        ];
+        $result = Normalizer::command($options);
+        $this->assertInstanceOf(MoveCall::class, $result->value);
+        $result->value = 'sa';
+        $this->assertEquals($result->MoveCall, $result->value); // @phpcs:ignore
+    }
+
+    /**
+     * @test
+     * @return void
+     */
+    public function testMoveCallCommandType(): void
+    {
+        $options = [
+            'package' => self::ADDRESS,
+            'module' => 'test',
+            'function' => 'test',
+            'typeArguments' => [],
+            'arguments' => [['test' => 'value']],
+            '_argumentTypes' => [
+                ['body' => 'test', 'ref' => 'reference']
+            ]
+        ];
+        $result = Normalizer::moveCall($options);
+        $this->assertInstanceOf(MoveCall::class, $result);
+        $commandMoveCall = $result->toCommand();
+        $this->assertEquals('MoveCall', $commandMoveCall->getKind());
+        $this->assertInstanceOf(Command::class, $commandMoveCall);
+        $this->assertEquals($commandMoveCall->value, $result);
+        $this->assertEquals($commandMoveCall->MoveCall, $result); // @phpcs:ignore
+        $this->assertEquals($commandMoveCall->MoveCall, $commandMoveCall->value); // @phpcs:ignore
+        $this->assertInstanceOf(MoveCall::class, $commandMoveCall->MoveCall); // @phpcs:ignore
+        $this->assertInstanceOf(MoveCall::class, $commandMoveCall->value);
     }
 
     /**
@@ -412,6 +497,23 @@ class NormalizerTest extends TestCase
         $options = ['None' => true];
         $result = Normalizer::transactionExpiration($options);
         $this->assertInstanceOf(TransactionExpiration::class, $result);
+    }
+
+    /**
+     * @test
+     * @return void
+     */
+    public function testTransactionExpirationRef(): void
+    {
+        $options = ['None' => true];
+        $options2 = ['Epoch' => '2323'];
+        $result = Normalizer::transactionExpiration($options);
+        $result2 = Normalizer::transactionExpiration($options2);
+        $this->assertEquals($result->None, true); // @phpcs:ignore
+        $result->None = false; // @phpcs:ignore
+        $this->assertEquals($result->None, false); // @phpcs:ignore
+        $this->assertEquals($result->value, false); // @phpcs:ignore
+        $this->assertNotEquals($result->value, $result2->value);
     }
 
     /**

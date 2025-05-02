@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sui\Transactions\Commands;
 
-class Intent
+class Intent extends Command
 {
     /**
      * @param string $name

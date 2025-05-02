@@ -155,22 +155,30 @@ class Normalizer
     }
 
     /**
-     * @param array<mixed> $options
+     * @param array<mixed> $input
      * @return MoveCall
      */
-    public static function moveCall(array $options): MoveCall
+    public static function moveCall(array $input): MoveCall
     {
+        if (isset($input['target'])) {
+            [$package, $module, $function] = array_pad(explode('::', $input['target']), 3, '');
+        } else {
+            $package = $input['package'];
+            $module = $input['module'];
+            $function = $input['function'];
+        }
+
         return new MoveCall(
-            self::suiAddress($options['package']),
-            $options['module'],
-            $options['function'],
-            $options['typeArguments'],
+            self::suiAddress($package),
+            $module,
+            $function,
+            $input['typeArguments'] ?? [],
             array_map(function ($value) {
                 return self::argument($value);
-            }, $options['arguments']),
-            isset($options['_argumentTypes']) ? array_map(function ($value) {
+            }, $input['arguments'] ?? []),
+            isset($input['_argumentTypes']) ? array_map(function ($value) {
                 return self::typeSignature($value);
-            }, $options['_argumentTypes']) : null,
+            }, $input['_argumentTypes'] ?? []) : null,
         );
     }
 
@@ -279,21 +287,29 @@ class Normalizer
         $command = $options[$kind];
         switch ($kind) {
             case 'Intent':
-                return new Command('Intent', self::intent($command));
+                $command = self::intent($command);
+                return new Command('Intent', $command);
             case 'MoveCall':
-                return new Command('MoveCall', self::moveCall($command));
+                $command = self::moveCall($command);
+                return new Command('MoveCall', $command);
             case 'TransferObjects':
-                return new Command('TransferObjects', self::transferObjects($command));
+                $command = self::transferObjects($command);
+                return new Command('TransferObjects', $command);
             case 'SplitCoins':
-                return new Command('SplitCoins', self::splitCoins($command));
+                $command = self::splitCoins($command);
+                return new Command('SplitCoins', $command);
             case 'MergeCoins':
-                return new Command('MergeCoins', self::mergeCoins($command));
+                $command = self::mergeCoins($command);
+                return new Command('MergeCoins', $command);
             case 'Publish':
-                return new Command('Publish', self::publish($command));
+                $command = self::publish($command);
+                return new Command('Publish', $command);
             case 'MakeMoveVec':
-                return new Command('MakeMoveVec', self::makeMoveVec($command));
+                $command = self::makeMoveVec($command);
+                return new Command('MakeMoveVec', $command);
             case 'Upgrade':
-                return new Command('Upgrade', self::upgrade($command));
+                $command = self::upgrade($command);
+                return new Command('Upgrade', $command);
             default:
                 throw new \Exception('Invalid command');
         }
@@ -322,11 +338,14 @@ class Normalizer
         $objectArg = $options[$kind];
         switch ($kind) {
             case 'ImmOrOwnedObject':
-                return new ObjectArg('ImmOrOwnedObject', self::objectRef($objectArg));
+                $objectArg = self::objectRef($objectArg);
+                return new ObjectArg('ImmOrOwnedObject', $objectArg);
             case 'SharedObject':
-                return new ObjectArg('SharedObject', self::sharedObject($objectArg));
+                $objectArg = self::sharedObject($objectArg);
+                return new ObjectArg('SharedObject', $objectArg);
             case 'Receiving':
-                return new ObjectArg('Receiving', self::objectRef($objectArg));
+                $objectArg = self::objectRef($objectArg);
+                return new ObjectArg('Receiving', $objectArg);
             default:
                 throw new \Exception('Invalid object arg');
         }
@@ -374,13 +393,17 @@ class Normalizer
         $callArg = $options[$kind];
         switch ($kind) {
             case 'Object':
-                return new CallArg('Object', self::objectArg($callArg));
+                $callArg = self::objectArg($callArg);
+                return new CallArg('Object', $callArg);
             case 'Pure':
-                return new CallArg('Pure', self::pure($callArg));
+                $callArg = self::pure($callArg);
+                return new CallArg('Pure', $callArg);
             case 'UnresolvedPure':
-                return new CallArg('UnresolvedPure', self::unresolvedPure($callArg));
+                $callArg = self::unresolvedPure($callArg);
+                return new CallArg('UnresolvedPure', $callArg);
             case 'UnresolvedObject':
-                return new CallArg('UnresolvedObject', self::unresolvedObject($callArg));
+                $callArg = self::unresolvedObject($callArg);
+                return new CallArg('UnresolvedObject', $callArg);
             default:
                 throw new \Exception('Invalid call arg');
         }
@@ -396,9 +419,11 @@ class Normalizer
         $normalizedCallArg = $options[$kind];
         switch ($kind) {
             case 'Object':
-                return new NormalizedCallArg('Object', self::objectArg($normalizedCallArg));
+                $normalizedCallArg = self::objectArg($normalizedCallArg);
+                return new NormalizedCallArg('Object', $normalizedCallArg);
             case 'Pure':
-                return new NormalizedCallArg('Pure', self::pure($normalizedCallArg));
+                $normalizedCallArg = self::pure($normalizedCallArg);
+                return new NormalizedCallArg('Pure', $normalizedCallArg);
             default:
                 throw new \Exception('Invalid normalized call arg');
         }

@@ -9,7 +9,7 @@ use Sui\Transactions\Type\TypeSignature;
 
 // phpcs:disable
 
-class MoveCall
+class MoveCall extends Command
 {
     /**
      * @param string $package

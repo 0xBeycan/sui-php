@@ -6,7 +6,7 @@ namespace Sui\Transactions\Commands;
 
 use Sui\Transactions\Type\Argument;
 
-class SplitCoins
+class SplitCoins extends Command
 {
     /**
      * @param Argument $coin

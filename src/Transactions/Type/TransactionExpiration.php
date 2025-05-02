@@ -13,10 +13,11 @@ class TransactionExpiration extends SafeEnum
      */
     public function __construct(
         public string $kind,
-        public bool|null $none,
-        public string|int|float|null $epoch,
+        bool|null $none,
+        string|int|float|null $epoch,
     ) {
         $epoch = $epoch ? (string) $epoch : null;
-        parent::__construct($kind, $epoch ?? $none);
+        $ref = $epoch ?? $none ?? null;
+        parent::__construct($kind, $ref);
     }
 }

@@ -6,7 +6,7 @@ namespace Sui\Transactions\Commands;
 
 use Sui\Transactions\Type\Argument;
 
-class MergeCoins
+class MergeCoins extends Command
 {
     /**
      * @param Argument $destination

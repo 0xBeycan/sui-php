@@ -6,7 +6,7 @@ namespace Sui\Transactions\Commands;
 
 use Sui\Transactions\Type\Argument;
 
-class TransferObjects
+class TransferObjects extends Command
 {
     /**
      * @param array<Argument> $objects

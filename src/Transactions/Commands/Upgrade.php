@@ -6,7 +6,7 @@ namespace Sui\Transactions\Commands;
 
 use Sui\Transactions\Type\Argument;
 
-class Upgrade
+class Upgrade extends Command
 {
     /**
      * @param array<string> $modules
