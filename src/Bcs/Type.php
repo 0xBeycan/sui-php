@@ -34,7 +34,7 @@ class Type
         $this->name = $name;
         $this->read = $read;
         $this->write = $write;
-        $this->validate = $validate ?? fn() => void;
+        $this->validate = $validate;
         $this->serialize = $serialize ?? function (mixed $value, array $options) use ($write): array {
             $writer = new Writer($options);
             $write($value, $writer);
@@ -380,7 +380,7 @@ class Type
         ?\Closure $validate = null
     ): self {
         return new self(
-            $name ?? $this->name,
+            $name,
             function (Reader $reader) use ($output): mixed {
                 return $output ? $output($this->read($reader)) : $this->read($reader);
             },

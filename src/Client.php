@@ -504,7 +504,7 @@ class Client
     }
 
     /**
-     * @param string|array<int>|Transaction $transactionBlock
+     * @param string|array<mixed>|Transaction $transactionBlock
      * @param string|null $sender
      * @return DryRunTransactionBlock
      */

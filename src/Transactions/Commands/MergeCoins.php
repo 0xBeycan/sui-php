@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sui\Transactions\Commands;
 
-use Sui\Transactions\Argument;
+use Sui\Transactions\Type\Argument;
 
 class MergeCoins extends Command
 {

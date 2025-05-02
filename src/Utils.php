@@ -189,7 +189,7 @@ class Utils
 
     /**
      * @param string $value
-     * @return object{address:string,module:string,name:string}
+     * @return object{address:string,module:string,name:string,typeParams:array<mixed>}
      */
     public static function parseStructTag(string $value): object
     {
@@ -198,7 +198,7 @@ class Utils
         $isMvrPackage = self::isValidNamedPackage($address);
 
         $rest = substr($value, strlen($address) + strlen($module) + 4);
-        $name = str_contains($rest, '<') ? substr($rest, 0, strpos($rest, '<')) : $rest;
+        $name = str_contains($rest, '<') ? substr($rest, 0, strpos($rest, '<') ?: 0) : $rest;
         $typeParams = str_contains($rest, '<')
             ? array_map(
                 fn($typeParam) => self::parseTypeTag(trim($typeParam)),
@@ -238,12 +238,12 @@ class Utils
      */
     public static function normalizeStructTag(string $value): string
     {
-        $structTag = is_string($value) ? self::parseStructTag($value) : $value;
+        $structTag = self::parseStructTag($value);
         $formattedTypeParams = '';
 
         if (!empty($structTag->typeParams)) {
             $formattedTypeParams = '<' . implode(',', array_map(
-                fn($typeParam) => is_string($typeParam) ? $typeParam : self::normalizeStructTag($typeParam),
+                fn($typeParam) => is_string($typeParam) ? self::normalizeStructTag($typeParam) : $typeParam,
                 $structTag->typeParams
             )) . '>';
         }
@@ -520,5 +520,35 @@ class Utils
         $tokens[] = trim($word);
 
         return $tokens;
+    }
+
+    /**
+     * @param string $type
+     * @param array<int> $data
+     * @return array<int>
+     */
+    public static function hashTypedData(string $type, array $data): array
+    {
+        if (!extension_loaded('sodium')) {
+            throw new \RuntimeException('The sodium extension is required for Blake2b hashing');
+        }
+
+        // Convert type tag to bytes
+        $typeTagBytes = array_map(
+            fn($char) => ord($char),
+            str_split($type . '::')
+        );
+
+        // Combine type tag and data
+        $dataWithTag = array_merge($typeTagBytes, $data);
+
+        // Convert array to binary string
+        $binaryData = implode(array_map('chr', $dataWithTag));
+
+        // Hash using Blake2b with 32 byte output length
+        $hash = sodium_crypto_generichash($binaryData, '', 32);
+
+        // Convert hash back to array of integers
+        return array_values(unpack('C*', $hash) ?: []);
     }
 }

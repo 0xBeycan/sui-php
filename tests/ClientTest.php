@@ -101,6 +101,17 @@ class ClientTest extends TestCase
     /**
      * @return void
      */
+    public function testGetCoins2(): void
+    {
+        $response = $this->client->getCoins($this->balanceAddress, Constants::SUI_TYPE_ARG);
+
+        $this->assertIsArray($response->data);
+        $this->assertEquals($response->data[0]->coinType, Constants::SUI_TYPE_ARG);
+    }
+
+    /**
+     * @return void
+     */
     public function testGetAllCoins(): void
     {
         $response = $this->client->getAllCoins($this->balanceAddress);

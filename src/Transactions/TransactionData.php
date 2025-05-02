@@ -5,6 +5,14 @@ declare(strict_types=1);
 namespace Sui\Transactions;
 
 use Sui\Utils;
+use Sui\Bcs\Map;
+use Sui\Transactions\Data\V1;
+use Sui\Transactions\Data\V2;
+use Sui\Transactions\Type\Argument;
+use Sui\Transactions\Type\CallArg;
+use Sui\Transactions\Type\GasData;
+use Sui\Transactions\Type\Expiration;
+use Sui\Transactions\Data\Internal;
 use Sui\Transactions\Commands\Command;
 use Sui\Transactions\Commands\MoveCall;
 use Sui\Transactions\Commands\TransferObjects;
@@ -170,6 +178,91 @@ class TransactionData
             'inputs' => array_map(fn(CallArg $input) => $input->toArray(), $this->inputs),
             'commands' => array_map(fn(Command $command) => $command->toArray(), $this->commands),
         ];
+    }
+
+    /**
+     * @param array<mixed> $data
+     * @return TransactionData
+     */
+    public static function fromArray(array $data): TransactionData
+    {
+        return Internal::normalizeTransactionData($data);
+    }
+
+    /**
+     * @param V1|V2 $data
+     * @return TransactionData
+     * @disregard
+     */
+    public static function restore(V1|V2 $data): TransactionData
+    {
+        if ($data instanceof V1) {
+            return V1::transactionDataFromV1($data);
+        }
+
+        if ($data instanceof V2) {
+            return V2::transactionDataFromV2($data);
+        }
+    }
+
+    /**
+     * @param array<int> $bytes
+     * @return TransactionData
+     */
+    public static function fromBytes(array $bytes): TransactionData
+    {
+        $rawData = Map::transactionData()->parse($bytes);
+        $data = $rawData['V1'];
+        $programmableTx = $data['kind']['ProgrammableTransaction'] ?? null;
+
+        if (!$data || !$programmableTx) {
+            throw new \Exception('Unable to deserialize from bytes.');
+        }
+
+        return self::restore(V1::fromArray($data));
+    }
+
+    /**
+     * @param array<int> $bytes
+     * @return TransactionData
+     */
+    public static function fromKindBytes(array $bytes): TransactionData
+    {
+        $kind = Map::transactionKind()->parse($bytes);
+        $programmableTx = $kind['ProgrammableTransaction'] ?? null;
+
+        if (!$programmableTx) {
+            throw new \Exception('Unable to deserialize from bytes.');
+        }
+
+        return self::restore(V2::fromArray([
+            'version' => 2,
+            'sender' => null,
+            'expiration' => null,
+            'gasData' => [
+                'budget' => null,
+                'owner' => null,
+                'payment' => null,
+                'price' => null,
+            ],
+            'inputs' => $programmableTx['inputs'],
+            'commands' => $programmableTx['commands'],
+        ]));
+    }
+
+    /**
+     * Generate transaction digest.
+     *
+     * @param array<int>|string $bytes BCS serialized transaction data
+     * @return string transaction digest.
+     */
+    public static function getDigestFromBytes(array|string $bytes): string
+    {
+        if (is_string($bytes)) {
+            $bytes = Utils::fromBase64($bytes);
+        }
+
+        return Utils::toBase58(Utils::hashTypedData('TransactionData', $bytes));
     }
 
     /**
@@ -344,15 +437,7 @@ class TransactionData
     /**
      * Builds the transaction data
      *
-     * @param array<string, mixed> $options The build options containing:
-     *                      - maxSizeBytes?: int
-     *                      - overrides?: array{
-     *                          expiration?: TransactionExpiration,
-     *                          sender?: string,
-     *                          gasConfig?: array<string, mixed>,
-     *                          gasData?: array<string, mixed>
-     *                      }
-     *                      - onlyTransactionKind?: bool
+     * @param array<mixed> $options
      * @return string The serialized transaction data
      */
     public function build(array $options = []): string
@@ -373,7 +458,7 @@ class TransactionData
         ];
 
         if ($onlyTransactionKind) {
-            return $this->serializeTransactionKind($kind, $maxSizeBytes);
+            return Map::transactionKind()->serialize($kind, ['maxSize' => $maxSizeBytes])->toBytes();
         }
 
         $expiration = $overrides['expiration'] ?? $this->expiration;
@@ -417,28 +502,38 @@ class TransactionData
             ],
         ];
 
-        return $this->serializeTransactionData(['V1' => $transactionData], $maxSizeBytes);
+        return Map::transactionData()->serialize($transactionData, ['maxSize' => $maxSizeBytes])->toBytes();
     }
 
     /**
-     * @param array<string, mixed> $kind
-     * @param int $maxSize
      * @return string
      */
-    private function serializeTransactionKind(array $kind, int $maxSize): string
+    public function getDigest(): string
     {
-        // TODO: Implement BCS serialization for TransactionKind
-        return '';
+        $bytes = $this->build(['onlyTransactionKind' => false]);
+        return self::getDigestFromBytes($bytes);
     }
 
     /**
-     * @param array<string, mixed> $data
-     * @param int $maxSize
-     * @return string
+     * @return TransactionData
      */
-    private function serializeTransactionData(array $data, int $maxSize): string
+    public function snapshot(): TransactionData
     {
-        // TODO: Implement BCS serialization for TransactionData
-        return '';
+        return self::fromArray($this->toArray());
+    }
+
+    /**
+     * @return TransactionData
+     */
+    public function shallowClone(): TransactionData
+    {
+        return self::fromArray([
+            'version' => self::VERSION,
+            'sender' => $this->sender,
+            'expiration' => $this->expiration,
+            'gasData' => $this->gasData->toArray(),
+            'inputs' => $this->inputs,
+            'commands' => $this->commands,
+        ]);
     }
 }

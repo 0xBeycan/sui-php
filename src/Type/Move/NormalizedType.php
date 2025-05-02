@@ -8,7 +8,10 @@ class NormalizedType
 {
     public string|int|null $key;
 
-    public string|Struct|float|NormalizedType $value;
+    /**
+     * @var string|Struct|float|NormalizedType|array<mixed>
+     */
+    public string|Struct|float|NormalizedType|array $value;
 
     /**
      * @param array<mixed>|string $data
