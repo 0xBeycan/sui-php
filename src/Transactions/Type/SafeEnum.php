@@ -19,6 +19,14 @@ abstract class SafeEnum
     }
 
     /**
+     * @return string
+     */
+    public function getKind(): string
+    {
+        return $this->kind;
+    }
+
+    /**
      * @param string $name
      * @param mixed $value
      * @return void

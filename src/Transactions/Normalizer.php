@@ -275,23 +275,25 @@ class Normalizer
      */
     public static function command(array $options): Command
     {
-        switch (self::getKind($options)) {
+        $kind = self::getKind($options);
+        $command = $options[$kind];
+        switch ($kind) {
             case 'Intent':
-                return new Command('Intent', self::intent($options));
+                return new Command('Intent', self::intent($command));
             case 'MoveCall':
-                return new Command('MoveCall', self::moveCall($options));
+                return new Command('MoveCall', self::moveCall($command));
             case 'TransferObjects':
-                return new Command('TransferObjects', self::transferObjects($options));
+                return new Command('TransferObjects', self::transferObjects($command));
             case 'SplitCoins':
-                return new Command('SplitCoins', self::splitCoins($options));
+                return new Command('SplitCoins', self::splitCoins($command));
             case 'MergeCoins':
-                return new Command('MergeCoins', self::mergeCoins($options));
+                return new Command('MergeCoins', self::mergeCoins($command));
             case 'Publish':
-                return new Command('Publish', self::publish($options));
+                return new Command('Publish', self::publish($command));
             case 'MakeMoveVec':
-                return new Command('MakeMoveVec', self::makeMoveVec($options));
+                return new Command('MakeMoveVec', self::makeMoveVec($command));
             case 'Upgrade':
-                return new Command('Upgrade', self::upgrade($options));
+                return new Command('Upgrade', self::upgrade($command));
             default:
                 throw new \Exception('Invalid command');
         }
@@ -316,13 +318,15 @@ class Normalizer
      */
     public static function objectArg(array $options): ObjectArg
     {
-        switch (self::getKind($options)) {
+        $kind = self::getKind($options);
+        $objectArg = $options[$kind];
+        switch ($kind) {
             case 'ImmOrOwnedObject':
-                return new ObjectArg('ImmOrOwnedObject', self::objectRef($options));
+                return new ObjectArg('ImmOrOwnedObject', self::objectRef($objectArg));
             case 'SharedObject':
-                return new ObjectArg('SharedObject', self::sharedObject($options));
+                return new ObjectArg('SharedObject', self::sharedObject($objectArg));
             case 'Receiving':
-                return new ObjectArg('Receiving', self::objectRef($options));
+                return new ObjectArg('Receiving', self::objectRef($objectArg));
             default:
                 throw new \Exception('Invalid object arg');
         }
@@ -366,15 +370,17 @@ class Normalizer
      */
     public static function callArg(array $options): CallArg
     {
-        switch (self::getKind($options)) {
+        $kind = self::getKind($options);
+        $callArg = $options[$kind];
+        switch ($kind) {
             case 'Object':
-                return new CallArg('Object', self::objectArg($options));
+                return new CallArg('Object', self::objectArg($callArg));
             case 'Pure':
-                return new CallArg('Pure', self::pure($options));
+                return new CallArg('Pure', self::pure($callArg));
             case 'UnresolvedPure':
-                return new CallArg('UnresolvedPure', self::unresolvedPure($options));
+                return new CallArg('UnresolvedPure', self::unresolvedPure($callArg));
             case 'UnresolvedObject':
-                return new CallArg('UnresolvedObject', self::unresolvedObject($options));
+                return new CallArg('UnresolvedObject', self::unresolvedObject($callArg));
             default:
                 throw new \Exception('Invalid call arg');
         }
@@ -386,11 +392,13 @@ class Normalizer
      */
     public static function normalizedCallArg(array $options): NormalizedCallArg
     {
-        switch (self::getKind($options)) {
+        $kind = self::getKind($options);
+        $normalizedCallArg = $options[$kind];
+        switch ($kind) {
             case 'Object':
-                return new NormalizedCallArg('Object', self::objectArg($options));
+                return new NormalizedCallArg('Object', self::objectArg($normalizedCallArg));
             case 'Pure':
-                return new NormalizedCallArg('Pure', self::pure($options));
+                return new NormalizedCallArg('Pure', self::pure($normalizedCallArg));
             default:
                 throw new \Exception('Invalid normalized call arg');
         }
@@ -404,8 +412,8 @@ class Normalizer
     {
         return new TransactionExpiration(
             self::getKind($options),
-            $options['None'] ?? false,
-            $options['Epoch'] ? self::jsonU64($options['Epoch']) : null
+            isset($options['None']) ? $options['None'] : false,
+            isset($options['Epoch']) ? self::jsonU64($options['Epoch']) : null
         );
     }
 
