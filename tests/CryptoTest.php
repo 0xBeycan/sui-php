@@ -165,4 +165,16 @@ class CryptoTest extends TestCase
         $this->assertEquals(64, count($result['signature']));
         $this->assertEquals(32, count($result['publicKey']));
     }
+
+    /**
+     * Test the hashTypedData function with a valid type and data
+     * @return void
+     */
+    public function testHashTypedData(): void
+    {
+        $type = 'TransactionData';
+        $data = [1, 2, 3, 4, 5];
+        $result = Utils::hashTypedData($type, $data);
+        $this->assertEquals(Utils::toBase64($result), 'sQmcQscA+OmsK/03aYD+0rnLGAj3sSE5KIjdXpQ2C5I=');
+    }
 }

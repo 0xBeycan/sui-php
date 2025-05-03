@@ -25,4 +25,15 @@ abstract class SafeEnum
     {
         return $this->kind;
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'kind' => $this->kind,
+            $this->kind => $this->value instanceof SafeEnum ? $this->value->toArray() : $this->value
+        ];
+    }
 }

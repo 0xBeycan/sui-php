@@ -231,7 +231,9 @@ class Normalizer
     public static function publish(array $options): Publish
     {
         return new Publish(
-            $options['modules'],
+            array_map(function ($value) {
+                return is_string($value) ? $value : Utils::toBase64($value);
+            }, $options['modules']),
             array_map(function ($value) {
                 return self::suiAddress($value);
             }, $options['dependencies']),
@@ -259,7 +261,9 @@ class Normalizer
     public static function upgrade(array $options): Upgrade
     {
         return new Upgrade(
-            $options['modules'],
+            array_map(function ($value) {
+                return is_string($value) ? $value : Utils::toBase64($value);
+            }, $options['modules']),
             array_map(function ($value) {
                 return self::suiAddress($value);
             }, $options['dependencies']),

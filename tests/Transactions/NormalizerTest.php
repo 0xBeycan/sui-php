@@ -467,6 +467,8 @@ class NormalizerTest extends TestCase
         ];
         $result = Normalizer::callArg($options);
         $this->assertInstanceOf(CallArg::class, $result);
+        $this->assertEquals($result->Object->ImmOrOwnedObject->digest, 'digest123'); // @phpcs:ignore
+        $this->assertEquals($result->toArray()['Object']['ImmOrOwnedObject']->digest, 'digest123');
     }
 
     /**
@@ -557,5 +559,19 @@ class NormalizerTest extends TestCase
         ];
         $result = Normalizer::transactionData($options);
         $this->assertInstanceOf(TransactionData::class, $result);
+    }
+
+    /**
+     * @return void
+     */
+    public function testPureRef(): void
+    {
+        $options = [
+            'Pure' => [
+                'bytes' => 'test'
+            ]
+        ];
+        $result = Normalizer::callArg($options);
+        $this->assertInstanceOf(Pure::class, $result->value);
     }
 }
