@@ -100,4 +100,17 @@ class Utils extends SuiUtils
     {
         return $value instanceof Argument;
     }
+
+    /**
+     * @param array<mixed> $array
+     * @return array<mixed>
+     */
+    public static function flattenArray(array $array): array
+    {
+        $result = [];
+        array_walk_recursive($array, function ($item) use (&$result) { // @phpcs:ignore
+            $result[] = $item;
+        });
+        return $result;
+    }
 }

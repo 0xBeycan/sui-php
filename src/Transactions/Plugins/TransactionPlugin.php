@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Sui\Transactions;
+namespace Sui\Transactions\Plugins;
+
+use Sui\Transactions\BuildTransactionOptions;
+use Sui\Transactions\TransactionDataBuilder;
 
 interface TransactionPlugin
 {

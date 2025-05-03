@@ -12,6 +12,9 @@ use Sui\Transactions\Type\ObjectRef;
 use Sui\Transactions\Type\TransactionData;
 use Sui\Transactions\Type\NormalizedCallArg;
 use Sui\Transactions\Type\TransactionExpiration;
+use Sui\Transactions\Plugins\TransactionPlugin;
+use Sui\Transactions\Plugins\PluginRegistry;
+use Sui\Transactions\Plugins\ResolveTransactionData;
 
 class Transaction
 {
@@ -43,14 +46,14 @@ class Transaction
     private array $commandSection = [];
 
     /**
-     * @var array<int>
+     * @var Set<int>
      */
-    private array $availableResults = [];
+    private Set $availableResults;
 
     /**
-     * @var array<\Closure>
+     * @var Set<\Closure>
      */
-    private array $pendingPromises = [];
+    private Set $pendingPromises;
 
     /**
      * @var \SplObjectStorage<object, mixed>
@@ -79,6 +82,8 @@ class Transaction
     {
         $this->options = $options;
         $this->added = new \SplObjectStorage();
+        $this->availableResults = new Set();
+        $this->pendingPromises = new Set();
         $globalPlugins = PluginRegistry::getInstance();
         $this->data = new TransactionDataBuilder();
         $this->buildPlugins = [...$globalPlugins->buildPlugins];
@@ -515,16 +520,17 @@ class Transaction
     {
         $this->waitForPendingTasks();
         $this->sortCommandsAndInputs();
-        $intents = [];
+        /** @var Set<string> */
+        $intents = new Set();
         foreach ($this->data->commands as $command) {
             if (isset($command->{'$Intent'}->name)) {
-                $intents[$command->{'$Intent'}->name] = $command->{'$Intent'}->name;
+                $intents->add($command->{'$Intent'}->name);
             }
         }
 
         $steps = [...$this->serializationPlugins];
 
-        foreach ($intents as $intent) {
+        foreach ($intents->toArray() as $intent) {
             if (in_array($intent, $this->options->supportedIntents ?? [])) {
                 continue;
             }
@@ -596,19 +602,6 @@ class Transaction
     }
 
     /**
-     * @param array<mixed> $array
-     * @return array<mixed>
-     */
-    private function flattenArray(array $array): array
-    {
-        $result = [];
-        array_walk_recursive($array, function ($item) use (&$result) { // @phpcs:ignore
-            $result[] = $item;
-        });
-        return $result;
-    }
-
-    /**
      * @return void
      */
     private function sortCommandsAndInputs(): void
@@ -616,8 +609,8 @@ class Transaction
         $unorderedCommands = $this->data->commands;
         $unorderedInputs = $this->data->inputs;
 
-        $orderedCommands = $this->flattenArray($unorderedCommands);
-        $orderedInputs = $this->flattenArray($unorderedInputs);
+        $orderedCommands = Utils::flattenArray($unorderedCommands);
+        $orderedInputs = Utils::flattenArray($unorderedInputs);
 
         if (count($orderedCommands) !== count($unorderedCommands)) {
             throw new \Exception('Unexpected number of commands found in transaction data');
@@ -696,8 +689,7 @@ class Transaction
             throw new \Exception('Missing transaction sender');
         }
 
-        // TODO: Add resolveTransactionData plugin from json-rpc-resolver
-        $this->runPlugins([...$this->buildPlugins]);
+        $this->runPlugins([...$this->buildPlugins, new ResolveTransactionData()]);
     }
 
     /**
@@ -715,8 +707,8 @@ class Transaction
      */
     private function waitForPendingTasks(): void
     {
-        if (count($this->pendingPromises) > 0) {
-            foreach ($this->pendingPromises as $promise) {
+        if ($this->pendingPromises->count() > 0) {
+            foreach ($this->pendingPromises->toArray() as $promise) {
                 $promise();
             }
         }
@@ -756,7 +748,7 @@ class Transaction
         $fork->buildPlugins = $this->buildPlugins;
         $fork->intentResolvers = $this->intentResolvers;
         $fork->pendingPromises = $this->pendingPromises;
-        $fork->availableResults =  $this->availableResults;
+        $fork->availableResults = $this->availableResults->clone();
         $fork->added = $this->added;
         $this->inputSection[] = $fork->inputSection;
         $this->commandSection[] = $fork->commandSection;
@@ -798,9 +790,9 @@ class Transaction
                 )
             );
 
-            $this->pendingPromises[] = function () use ($result, $placeholder) { // @phpcs:ignore
+            $this->pendingPromises->add(function () use ($result, $placeholder) { // @phpcs:ignore
                 $placeholder->value->data->result = $result;
-            };
+            });
 
             $txResult = self::createTransactionResult(count($this->data->commands) - 1);
             $this->added->attach($value, $txResult);
@@ -822,19 +814,19 @@ class Transaction
     {
         $resultIndex = count($this->data->commands);
         $this->commandSection[] = $command;
-        $this->availableResults[] = $resultIndex;
+        $this->availableResults->add($resultIndex);
         $this->data->commands[] = $command;
 
         $this->data->mapCommandArguments(
             $resultIndex,
             function (Argument $arg): Argument {
-                if ('Result' === $arg->kind && !in_array($arg->value, $this->availableResults)) {
+                if ('Result' === $arg->kind && !$this->availableResults->has($arg->value)) {
                     throw new \Exception(
                         "Result { Result: {$arg->Result} } is not available to use the current transaction",
                     );
                 }
 
-                if ('NestedResult' === $arg->kind && !in_array($arg->value, $this->availableResults)) {
+                if ('NestedResult' === $arg->kind && !$this->availableResults->has($arg->value[0])) {
                     throw new \Exception(
                         "Result { NestedResult: [{$arg->value[0]}, {$arg->value[1]}] } is not available to use the current transaction", // @phpcs:ignore
                     );

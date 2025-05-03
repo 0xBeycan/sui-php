@@ -581,4 +581,21 @@ class Utils
     {
         return 1 === preg_match('/^[A-Za-z0-9+\/=]+$/', $value);
     }
+
+    /**
+     * @param array<mixed> $array
+     * @param int $size
+     * @return array<array<mixed>>
+     */
+    public static function chunk(array $array, int $size): array
+    {
+        $chunks = [];
+        $length = count($array);
+
+        for ($i = 0; $i < $length; $i += $size) {
+            $chunks[] = array_slice($array, $i, $size);
+        }
+
+        return $chunks;
+    }
 }
