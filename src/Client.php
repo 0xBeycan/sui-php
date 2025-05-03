@@ -30,6 +30,7 @@ use Sui\Paginated\PaginatedCheckpoints;
 use Sui\Paginated\PaginatedDynamicFieldInfo;
 use Sui\Paginated\PaginatedTransactionBlocks;
 use Sui\Paginated\PaginatedResolvedNameServiceNames;
+use Sui\Transactions\BuildTransactionOptions;
 
 class Client
 {
@@ -468,10 +469,11 @@ class Client
                 throw new Exception('Sender is required when using Transaction instance');
             }
             $transactionBlock->setSenderIfNotSet($sender);
-            $buildedTx = $transactionBlock->build([
-                'client' => $this,
-                'onlyTransactionKind' => true
-            ]);
+            $transactionBlock->setOptions(new BuildTransactionOptions(
+                client: $this,
+                onlyTransactionKind: true
+            ));
+            $buildedTx = $transactionBlock->build();
             return Utils::toBase64($buildedTx);
         } elseif (is_array($transactionBlock)) {
             return Utils::toBase64($transactionBlock);

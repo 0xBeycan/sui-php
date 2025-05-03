@@ -101,7 +101,7 @@ class Normalizer
             isset($options['price']) ? self::jsonU64($options['price']) : null,
             isset($options['owner']) ? self::suiAddress($options['owner']) : null,
             isset($options['payment']) ? array_map(function ($value) {
-                return self::objectRef($value);
+                return $value instanceof ObjectRef ? $value : self::objectRef($value);
             }, $options['payment']) : null,
         );
     }
@@ -117,7 +117,9 @@ class Normalizer
             $options['module'],
             $options['name'],
             array_map(function ($value) {
-                return self::structTag($value);
+                return $value instanceof StructTag
+                    ? $value
+                    : self::structTag($value);
             }, $options['typeParams'] ?? []),
         );
     }
@@ -142,14 +144,18 @@ class Normalizer
     {
         return new Intent(
             $options['name'],
-            array_map(function (array $value) {
+            array_map(function (mixed $value) {
                 if (is_array($value) && array_is_list($value)) {
                     return array_map(
-                        fn($item) => self::argument($item),
+                        fn($item) => $item instanceof Argument
+                            ? $item
+                            : self::argument($item),
                         $value
                     );
                 } else {
-                    return self::argument($value);
+                    return $value instanceof Argument
+                        ? $value
+                        : self::argument($value);
                 }
             }, $options['inputs']),
             $options['data'],
@@ -176,10 +182,14 @@ class Normalizer
             $function,
             $input['typeArguments'] ?? [],
             array_map(function ($value) {
-                return self::argument($value);
+                return $value instanceof Argument
+                    ? $value
+                    : self::argument($value);
             }, $input['arguments'] ?? []),
             isset($input['_argumentTypes']) ? array_map(function ($value) {
-                return self::typeSignature($value);
+                return $value instanceof TypeSignature
+                    ? $value
+                    : self::typeSignature($value);
             }, $input['_argumentTypes']) : null,
         );
     }
@@ -192,9 +202,13 @@ class Normalizer
     {
         return new TransferObjects(
             array_map(function ($value) {
-                return self::argument($value);
+                return $value instanceof Argument
+                    ? $value
+                    : self::argument($value);
             }, $options['objects']),
-            self::argument($options['address']),
+            $options['address'] instanceof Argument
+                ? $options['address']
+                : self::argument($options['address']),
         );
     }
 
@@ -205,9 +219,13 @@ class Normalizer
     public static function splitCoins(array $options): SplitCoins
     {
         return new SplitCoins(
-            self::argument($options['coin']),
+            $options['coin'] instanceof Argument
+                ? $options['coin']
+                : self::argument($options['coin']),
             array_map(function ($value) {
-                return self::argument($value);
+                return $value instanceof Argument
+                    ? $value
+                    : self::argument($value);
             }, $options['amounts']),
         );
     }
@@ -219,9 +237,13 @@ class Normalizer
     public static function mergeCoins(array $options): MergeCoins
     {
         return new MergeCoins(
-            self::argument($options['destination']),
+            $options['destination'] instanceof Argument
+                ? $options['destination']
+                : self::argument($options['destination']),
             array_map(function ($value) {
-                return self::argument($value);
+                return $value instanceof Argument
+                    ? $value
+                    : self::argument($value);
             }, $options['sources']),
         );
     }
@@ -250,7 +272,7 @@ class Normalizer
     {
         return new MakeMoveVec(
             array_map(function ($value) {
-                return self::argument($value);
+                return $value instanceof Argument ? $value : self::argument($value);
             }, $options['elements']),
             isset($options['type']) ? $options['type'] : null,
         );
@@ -270,7 +292,7 @@ class Normalizer
                 return self::suiAddress($value);
             }, $options['dependencies']),
             self::suiAddress($options['package']),
-            self::argument($options['ticket']),
+            $options['ticket'] instanceof Argument ? $options['ticket'] : self::argument($options['ticket']),
         );
     }
 
@@ -292,9 +314,9 @@ class Normalizer
         $kind = self::getKind($options);
         $command = $options[$kind];
         switch ($kind) {
-            case 'Intent':
+            case '$Intent':
                 $command = self::intent($command);
-                return new Command('Intent', $command);
+                return new Command('$Intent', $command);
             case 'MoveCall':
                 $command = self::moveCall($command);
                 return new Command('MoveCall', $command);
@@ -443,7 +465,7 @@ class Normalizer
     {
         return new TransactionExpiration(
             self::getKind($options),
-            isset($options['None']) ? $options['None'] : false,
+            $options['None'] ?? false,
             isset($options['Epoch']) ? self::jsonU64($options['Epoch']) : null
         );
     }
@@ -454,17 +476,37 @@ class Normalizer
      */
     public static function transactionData(array $options): TransactionData
     {
+        if (isset($options['expiration'])) {
+            $expiration = $options['expiration'] instanceof TransactionExpiration
+                ? $options['expiration']
+                : self::transactionExpiration($options['expiration']);
+        } else {
+            $expiration = null;
+        }
+        $gasData = $options['gasData'] ?? null;
+        if ($gasData) {
+            $gasData = $gasData instanceof GasData
+                ? $gasData
+                : self::gasData($gasData);
+        } else {
+            $gasData = self::gasData([]);
+        }
+        $sender = $options['sender'] ? self::suiAddress($options['sender']) : null;
         return new TransactionData(
             $options['version'] ?? 2,
-            self::gasData($options['gasData']),
+            $gasData,
             array_map(function ($callArg) {
-                return self::callArg($callArg);
-            }, $options['inputs']),
+                return $callArg instanceof CallArg
+                    ? $callArg
+                    : self::callArg($callArg);
+            }, $options['inputs'] ?? []),
             array_map(function ($command) {
-                return self::command($command);
-            }, $options['commands']),
-            $options['sender'] ? self::suiAddress($options['sender']) : null,
-            $options['expiration'] ? self::transactionExpiration($options['expiration']) : null,
+                return $command instanceof Command
+                    ? $command
+                    : self::command($command);
+            }, $options['commands'] ?? []),
+            $sender,
+            $expiration,
         );
     }
 }

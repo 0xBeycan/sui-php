@@ -14,17 +14,17 @@ use Sui\Transactions\Type\TransactionData;
 class TransactionDataBuilder extends TransactionData
 {
     /**
-     * @param TransactionData $clone
+     * @param TransactionData|null $clone
      */
-    public function __construct(TransactionData $clone)
+    public function __construct(?TransactionData $clone = null)
     {
         parent::__construct(
             2,
-            $clone->gasData ?? new GasData(),
-            $clone->inputs ?? [],
-            $clone->commands ?? [],
-            $clone->sender ?? null,
-            $clone->expiration ?? null,
+            $clone?->gasData ?? new GasData(),
+            $clone?->inputs ?? [],
+            $clone?->commands ?? [],
+            $clone?->sender ?? null,
+            $clone?->expiration ?? null,
         );
     }
 
@@ -101,17 +101,13 @@ class TransactionDataBuilder extends TransactionData
     /**
      * @param string $type
      * @param CallArg $arg
-     * @return array<mixed>
+     * @return Argument
      */
-    public function addInput(string $type, CallArg $arg): array
+    public function addInput(string $type, CallArg $arg): Argument
     {
         $index = count($this->inputs);
         $this->inputs[] = $arg;
-        return [
-            'Input' => $index,
-            'type' => $type,
-            'kind' => 'Input',
-        ];
+        return new Argument('Input', $index, $type);
     }
 
     /**
@@ -188,11 +184,15 @@ class TransactionDataBuilder extends TransactionData
             case 'Upgrade':
                 $command->value->ticket = $fn($command->value->ticket, $command, $index);
                 break;
-            case 'Intent':
-                $command->value->inputs = array_map(
-                    fn(Argument $arg) => $fn($arg, $command, $index),
-                    $command->value->inputs
-                );
+            case '$Intent':
+                $inputs = $command->value->inputs;
+                $command->value->inputs = [];
+
+                foreach ($inputs as $key => $value) {
+                    $command->value->inputs[$key] = is_array($value)
+                        ? array_map(fn(Argument $arg) => $fn($arg, $command, $index), $value)
+                        : $fn($value, $command, $index);
+                }
                 break;
             default:
                 throw new \Exception('Unexpected transaction kind: ' . $command->kind);
