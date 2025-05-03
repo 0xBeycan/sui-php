@@ -367,20 +367,20 @@ class Type
     /**
      * Create a new type that transforms values during serialization and deserialization
      *
-     * @param string $name Optional name for the new type
+     * @param string|null $name Optional name for the new type
      * @param \Closure|null $input Optional function to transform input values
      * @param \Closure|null $output Optional function to transform output values
      * @param \Closure|null $validate Optional function to validate values
      * @return self The transformed type
      */
     public function transform(
-        string $name,
+        ?string $name = null,
         ?\Closure $input = null,
         ?\Closure $output = null,
         ?\Closure $validate = null
     ): self {
         return new self(
-            $name,
+            $name ?? $this->name,
             function (Reader $reader) use ($output): mixed {
                 return $output ? $output($this->read($reader)) : $this->read($reader);
             },
