@@ -33,7 +33,6 @@ class Constants
 
     /**
      * SUI clock object ID
-     * Note: Original JS uses normalizeSuiObjectId function
      */
     public const SUI_CLOCK_OBJECT_ID = '0x6';
 
@@ -49,7 +48,6 @@ class Constants
 
     /**
      * SUI system state object ID
-     * Note: Original JS uses normalizeSuiObjectId function
      */
     public const SUI_SYSTEM_STATE_OBJECT_ID = '0x5';
 
