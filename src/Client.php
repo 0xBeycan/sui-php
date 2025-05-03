@@ -467,7 +467,7 @@ class Client
             if (!$sender) {
                 throw new Exception('Sender is required when using Transaction instance');
             }
-            $transactionBlock->data->setSenderIfNotSet($sender);
+            $transactionBlock->setSenderIfNotSet($sender);
             $buildedTx = $transactionBlock->build([
                 'client' => $this,
                 'onlyTransactionKind' => true

@@ -17,4 +17,16 @@ class ObjectRef
         public string $digest,
     ) {
     }
+
+    /**
+     * @return array<mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'objectId' => $this->objectId,
+            'version' => $this->version,
+            'digest' => $this->digest,
+        ];
+    }
 }

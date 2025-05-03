@@ -9,10 +9,8 @@ use Sui\Type\Move\StructTag;
 use Sui\Type\Move\NormalizedType;
 use Sui\Transactions\Type\CallArg;
 use Sui\Transactions\Type\Argument;
-use Sui\Transactions\Type\Pure;
-use Sui\Transactions\Type\UnresolvedPure;
 
-class Utils
+class Utils extends SuiUtils
 {
     /**
      * @param NormalizedType $normalizedType
