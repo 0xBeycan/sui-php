@@ -7,6 +7,11 @@ namespace Sui\Transactions\Type;
 class ObjectArg extends SafeEnum
 {
     /**
+     * @var ObjectRef|SharedObject
+     */
+    public mixed $value;
+
+    /**
      * @param string $kind
      * @param ObjectRef|SharedObject $value
      */

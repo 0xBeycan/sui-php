@@ -7,6 +7,11 @@ namespace Sui\Transactions\Type;
 class CallArg extends SafeEnum
 {
     /**
+     * @var ObjectArg|Pure|UnresolvedPure|UnresolvedObject
+     */
+    public mixed $value;
+
+    /**
      * @param string $kind
      * @param ObjectArg|Pure|UnresolvedPure|UnresolvedObject $value
      */

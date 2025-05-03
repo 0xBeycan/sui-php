@@ -9,9 +9,9 @@ class NormalizedType
     public string|int|null $key;
 
     /**
-     * @var string|Struct|float|NormalizedType|array<mixed>
+     * @var string|StructTag|float|NormalizedType|array<mixed>
      */
-    public string|Struct|float|NormalizedType|array $value;
+    public string|StructTag|float|NormalizedType|array $value;
 
     /**
      * @param array<mixed>|string $data
@@ -25,7 +25,7 @@ class NormalizedType
             $this->key = array_key_first($data);
             switch ($this->key) {
                 case 'Struct':
-                    $this->value = new Struct($data[$this->key]);
+                    $this->value = new StructTag($data[$this->key]);
                     break;
                 case 'Vector':
                 case 'Reference':

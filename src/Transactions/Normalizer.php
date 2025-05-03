@@ -97,12 +97,12 @@ class Normalizer
     public static function gasData(array $options): GasData
     {
         return new GasData(
-            $options['budget'] ? self::jsonU64($options['budget']) : null,
-            $options['price'] ? self::jsonU64($options['price']) : null,
-            $options['owner'] ? self::suiAddress($options['owner']) : null,
-            array_map(function ($value) {
+            isset($options['budget']) ? self::jsonU64($options['budget']) : null,
+            isset($options['price']) ? self::jsonU64($options['price']) : null,
+            isset($options['owner']) ? self::suiAddress($options['owner']) : null,
+            isset($options['payment']) ? array_map(function ($value) {
                 return self::objectRef($value);
-            }, $options['payment'] ?? []),
+            }, $options['payment']) : null,
         );
     }
 
@@ -116,7 +116,9 @@ class Normalizer
             $options['address'],
             $options['module'],
             $options['name'],
-            $options['typeParams'],
+            array_map(function ($value) {
+                return self::structTag($value);
+            }, $options['typeParams'] ?? []),
         );
     }
 
@@ -128,7 +130,7 @@ class Normalizer
     {
         return new TypeSignature(
             $options['body'],
-            $options['ref'] ?? null
+            isset($options['ref']) ? $options['ref'] : null
         );
     }
 
@@ -178,7 +180,7 @@ class Normalizer
             }, $input['arguments'] ?? []),
             isset($input['_argumentTypes']) ? array_map(function ($value) {
                 return self::typeSignature($value);
-            }, $input['_argumentTypes'] ?? []) : null,
+            }, $input['_argumentTypes']) : null,
         );
     }
 
@@ -250,7 +252,7 @@ class Normalizer
             array_map(function ($value) {
                 return self::argument($value);
             }, $options['elements']),
-            $options['type'] ?? null,
+            isset($options['type']) ? $options['type'] : null,
         );
     }
 
@@ -381,9 +383,9 @@ class Normalizer
     {
         return new UnresolvedObject(
             self::suiAddress($options['objectId']),
-            $options['version'] ? self::jsonU64($options['version']) : null,
-            $options['digest'] ? $options['digest'] : null,
-            $options['initialSharedVersion'] ? self::jsonU64($options['initialSharedVersion']) : null,
+            isset($options['version']) ? self::jsonU64($options['version']) : null,
+            isset($options['digest']) ? $options['digest'] : null,
+            isset($options['initialSharedVersion']) ? self::jsonU64($options['initialSharedVersion']) : null,
         );
     }
 

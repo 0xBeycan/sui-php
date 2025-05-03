@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sui;
 
 use ParagonIE_Sodium_Compat;
+use Sui\Type\Move\StructTag;
 
 class Utils
 {
@@ -191,9 +192,9 @@ class Utils
 
     /**
      * @param string $value
-     * @return object{address:string,module:string,name:string,typeParams:array<mixed>}
+     * @return StructTag
      */
-    public static function parseStructTag(string $value): object
+    public static function parseStructTag(string $value): StructTag
     {
         [$address, $module] = explode('::', $value);
 
@@ -210,12 +211,12 @@ class Utils
             )
             : [];
 
-        return (object)[
+        return new StructTag([
             'address' => $isMvrPackage ? $address : self::normalizeSuiAddress($address),
             'module' => $module,
             'name' => $name,
             'typeParams' => $typeParams,
-        ];
+        ]);
     }
 
     /**
@@ -235,17 +236,22 @@ class Utils
     }
 
     /**
-     * @param string $value
+     * @param string|StructTag $value
      * @return string
      */
-    public static function normalizeStructTag(string $value): string
+    public static function normalizeStructTag(string|StructTag $value): string
     {
-        $structTag = self::parseStructTag($value);
+        $structTag = $value instanceof StructTag ? $value : self::parseStructTag($value);
         $formattedTypeParams = '';
 
         if (!empty($structTag->typeParams)) {
             $formattedTypeParams = '<' . implode(',', array_map(
-                fn($typeParam) => is_string($typeParam) ? self::normalizeStructTag($typeParam) : $typeParam,
+                function ($typeParam) {
+                    if (is_string($typeParam)) {
+                        return $typeParam;
+                    }
+                    return self::normalizeStructTag($typeParam);
+                },
                 $structTag->typeParams
             )) . '>';
         }

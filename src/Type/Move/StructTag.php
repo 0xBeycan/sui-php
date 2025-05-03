@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sui\Type\Move;
 
-class Struct
+class StructTag
 {
     public string $address;
 
@@ -13,9 +13,9 @@ class Struct
     public string $name;
 
     /**
-     * @var array<NormalizedType>
+     * @var array<StructTag|string>
      */
-    public array $typeArguments;
+    public array $typeParams;
 
     /**
      * @param array<string,mixed> $data
@@ -25,9 +25,9 @@ class Struct
         $this->address = $data['address'];
         $this->module = $data['module'];
         $this->name = $data['name'];
-        $this->typeArguments = array_map(
-            fn (array|string $item) => new NormalizedType($item),
-            $data['typeArguments'] ?? []
+        $this->typeParams = array_map(
+            fn (array|string $item) => is_string($item) ? $item : new StructTag($item),
+            $data['typeParams'] ?? []
         );
     }
 }

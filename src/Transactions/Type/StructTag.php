@@ -10,7 +10,7 @@ class StructTag
      * @param string $address
      * @param string $module
      * @param string $name
-     * @param array<mixed> $typeParams
+     * @param array<StructTag|string> $typeParams
      */
     public function __construct(
         public string $address,

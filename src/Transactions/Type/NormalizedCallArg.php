@@ -7,6 +7,11 @@ namespace Sui\Transactions\Type;
 class NormalizedCallArg extends SafeEnum
 {
     /**
+     * @var ObjectArg|Pure
+     */
+    public mixed $value;
+
+    /**
      * @param string $kind
      * @param ObjectArg|Pure $value
      */
