@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Transactions;
+namespace Sui\Tests\Transactions;
 
 use PHPUnit\Framework\TestCase;
 use Sui\Transactions\Proxy;

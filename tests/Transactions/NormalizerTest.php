@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sui\Transactions\Tests;
+namespace Sui\Tests\Transactions;
 
 use PHPUnit\Framework\TestCase;
 use Sui\Transactions\Normalizer;

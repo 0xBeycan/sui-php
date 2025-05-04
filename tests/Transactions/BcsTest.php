@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sui\Tests;
+namespace Sui\Tests\Transactions;
 
 use PHPUnit\Framework\TestCase;
 use Sui\Bcs\Map;

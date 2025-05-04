@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sui\Tests\Keypairs\Ed25519;
+namespace Sui\Tests\Keypairs;
 
 use Sui\Utils;
 use Sui\Verify;

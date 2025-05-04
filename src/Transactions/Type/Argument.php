@@ -18,4 +18,16 @@ class Argument extends SafeEnum
     ) {
         parent::__construct($kind, $value);
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        $base = parent::toArray();
+        if ($this->type) {
+            $base['type'] = $this->type;
+        }
+        return $base;
+    }
 }
