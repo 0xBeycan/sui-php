@@ -70,7 +70,8 @@ class Helpers
         $signatureScheme = Schema::SIGNATURE_FLAG_TO_SCHEME[$bytes[0]];
         switch ($signatureScheme) {
             case 'Passkey':
-                return []; // TODO: Implement
+                // TODO: Implement
+                throw new \Exception('Passkey signatures are not supported');
             case 'MultiSig':
                 $multisig = Map::multiSig()->parse(array_slice($bytes, 1));
                 return [
@@ -81,7 +82,8 @@ class Helpers
                     'signature' => null,
                 ];
             case 'ZkLogin':
-                return []; // TODO: Implement
+                // TODO: Implement
+                throw new \Exception('ZkLogin signatures are not supported');
             case 'ED25519':
             case 'Secp256k1':
             case 'Secp256r1':

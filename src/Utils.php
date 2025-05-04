@@ -388,7 +388,7 @@ class Utils
             $unpack = unpack('C*', $bytes);
             $bytes = array_values($unpack ? $unpack : []);
         }
-        return base64_encode(implode(array_map('chr', $bytes)));
+        return base64_encode(implode(array_map(fn($byte) => chr((int) $byte), $bytes)));
     }
 
     /**
@@ -597,5 +597,14 @@ class Utils
         }
 
         return $chunks;
+    }
+
+    /**
+     * @param string $input
+     * @return array<int>
+     */
+    public static function textEncode(string $input): array
+    {
+        return array_values(unpack('C*', mb_convert_encoding($input, 'UTF-8')) ?: []);
     }
 }
