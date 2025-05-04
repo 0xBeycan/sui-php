@@ -8,7 +8,7 @@ use PHPUnit\Framework\TestCase;
 use Sui\Transactions\Proxy;
 use Sui\Transactions\Transaction;
 
-class TransactionTest extends TestCase
+class ProxyTest extends TestCase
 {
     /**
      * Test the get and set functionality of the Proxy class
