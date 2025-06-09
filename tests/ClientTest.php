@@ -76,7 +76,7 @@ class ClientTest extends TestCase
     public function testGetAllBalances(): void
     {
         $response = $this->client->getAllBalances($this->balanceAddress);
-        $this->assertEquals(count($response), 2);
+        $this->assertEquals(count($response), 3);
     }
 
     /**
