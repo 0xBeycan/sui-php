@@ -684,6 +684,36 @@ class Client
     }
 
     /**
+     * @param string|array<mixed> $transactionBlock
+     * @param string|array<mixed> $signature
+     * @param bool $waitForLocalExecution
+     * @param array<mixed>|null $options
+     * @return TransactionBlock
+     */
+    public function executeTransactionBlock(
+        string|array $transactionBlock,
+        string|array $signature,
+        bool $waitForLocalExecution = false,
+        ?array $options = null
+    ): TransactionBlock {
+        $result = $this->request('sui_executeTransactionBlock', [
+            $this->transactionBlockToBase64($transactionBlock),
+            is_array($signature) ? $signature : [$signature],
+            $options,
+        ]);
+
+        if ($waitForLocalExecution) {
+            try {
+                return $this->waitForTransaction($result['digest'], $options);
+            } catch (\Exception $e) {
+                // Ignore error while waiting for transaction
+            }
+        }
+
+        return new TransactionBlock($result);
+    }
+
+    /**
      * @return array<mixed>
      */
     // @phpcs:ignore

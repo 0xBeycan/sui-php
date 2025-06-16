@@ -362,7 +362,7 @@ class Transaction
 
         $this->addCommand($command);
 
-        return self::createArgument(count($this->data->commands) - 1, count($amounts));
+        return new Argument('Result', count($this->data->commands) - 1);
     }
 
     /**
@@ -707,7 +707,7 @@ class Transaction
 
                     $orderedInputs = json_decode($orderedInputs, true);
                     $unorderedInputs = json_decode($unorderedInputs, true);
-                    $updated = array_search($unorderedInputs[$arg->getValue()], $orderedInputs);
+                    $updated = array_search($unorderedInputs[$arg->value], $orderedInputs);
 
                     if (-1 === $updated) {
                         throw new \Exception('Input has not been resolved');
@@ -845,7 +845,7 @@ class Transaction
                 $placeholder->value->data->result = $result;
             });
 
-            $txResult = self::createArgument(count($this->data->commands) - 1);
+            $txResult = new Argument('Result', count($this->data->commands) - 1);
             $this->added->attach($value, $txResult);
             return $txResult;
         } elseif ($value instanceof Command) {
@@ -854,7 +854,7 @@ class Transaction
             $this->addCommand(Normalizer::command($value));
         }
 
-        return self::createArgument(count($this->data->commands) - 1);
+        return new Argument('Result', count($this->data->commands) - 1);
     }
 
     /**
@@ -996,65 +996,5 @@ class Transaction
     public static function unregisterBuildPlugin(string $name): void
     {
         PluginRegistry::getInstance()->unregisterBuildPlugin($name);
-    }
-
-    /**
-     * @param int $index
-     * @param int $length
-     * @return Argument
-     */
-    public static function createArgument(int $index, int $length = PHP_INT_MAX): Argument
-    {
-        $baseResult = (object) [
-            'kind' => 'Result',
-            'Result' => $index,
-        ];
-
-        $nestedResults = [];
-
-        $nestedResultFor = function (int $resultIndex) use ($index, &$nestedResults): object {
-            if (!isset($nestedResults[$resultIndex])) {
-                $nestedResults[$resultIndex] = (object) [
-                    'kind' => 'NestedResult',
-                    'NestedResult' => [$index, $resultIndex],
-                ];
-            }
-            return $nestedResults[$resultIndex];
-        };
-
-        // phpcs:ignore
-        return new Argument($baseResult->kind, $baseResult->Result, null, function ($target, $property) use ($length, $nestedResultFor) {
-            // This allows this transaction argument to be used in the singular form:
-            if (property_exists($target, $property)) {
-                return $target->$property;
-            }
-
-            // Check if the property is __iterator__ for iteration support
-            if ('__iterator__' === $property) {
-                return function () use ($length, $nestedResultFor) {
-                    $i = 0;
-                    while ($i < $length) {
-                        yield $nestedResultFor($i);
-                        $i++;
-                    }
-                };
-            }
-
-            // Handle symbol-like properties
-            if (is_string($property) && str_starts_with($property, '$')) {
-                return null;
-            }
-
-            // Check for numeric property
-            if (is_numeric($property)) {
-                $resultIndex = (int)$property;
-                if ($resultIndex < 0 || $resultIndex >= $length) {
-                    return null;
-                }
-                return $nestedResultFor($resultIndex);
-            }
-
-            return null;
-        });
     }
 }

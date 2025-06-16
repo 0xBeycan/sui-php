@@ -73,7 +73,7 @@ class TransactionDataBuilder extends TransactionData
             throw new \Exception('Missing gas budget');
         }
 
-        if (empty($gasData['payment'])) {
+        if (!isset($gasData['payment'])) {
             throw new \Exception('Missing gas payment');
         }
 

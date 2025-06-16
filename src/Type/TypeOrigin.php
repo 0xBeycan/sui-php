@@ -21,4 +21,16 @@ class TypeOrigin
         $this->moduleName = $data['module_name'];
         $this->package = $data['package'];
     }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'datatype_name' => $this->datatypeName,
+            'module_name' => $this->moduleName,
+            'package_id' => $this->package,
+        ];
+    }
 }

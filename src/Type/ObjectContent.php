@@ -33,4 +33,18 @@ class ObjectContent
         $this->disassembled = $data['disassembled'] ?? null;
         $this->hasPublicTransfer = $data['hasPublicTransfer'] ?? null;
     }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'type' => $this->type,
+            'fields' => $this->fields,
+            'dataType' => $this->dataType,
+            'disassembled' => $this->disassembled,
+            'hasPublicTransfer' => $this->hasPublicTransfer,
+        ];
+    }
 }

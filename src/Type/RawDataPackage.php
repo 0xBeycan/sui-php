@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sui\Type;
 
-class RawDataObject
+class RawDataPackage
 {
     public string $id;
 
@@ -43,5 +43,25 @@ class RawDataObject
             fn(array $item) => new TypeOrigin($item),
             $data['typeOriginTable']
         );
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'version' => $this->version,
+            'moduleMap' => $this->moduleMap,
+            'linkageTable' => array_map(
+                fn(UpgradeInfo $item) => $item->toArray(),
+                $this->linkageTable
+            ),
+            'typeOriginTable' => array_map(
+                fn(TypeOrigin $item) => $item->toArray(),
+                $this->typeOriginTable
+            ),
+        ];
     }
 }

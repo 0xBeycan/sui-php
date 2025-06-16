@@ -32,7 +32,9 @@ class ResolveTransactionData extends BasePlugin implements TransactionPlugin
             $this->setGasBudget();
             $this->setGasPayment();
         }
+
         $this->validate();
+
         $next();
     }
 }

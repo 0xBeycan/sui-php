@@ -21,7 +21,7 @@ class SuiObjetData
 
     public ?string $storageRebate;
 
-    public ?RawDataObject $bcs;
+    public ?RawDataPackage $bcs;
 
     public ?ObjectOwner $owner;
 
@@ -41,8 +41,27 @@ class SuiObjetData
         $this->display = $data['display'] ?? null;
         $this->storageRebate = $data['storageRebate'] ?? null;
         $this->previousTransaction = $data['previousTransaction'] ?? null;
-        $this->bcs = isset($data['bcs']) ? new RawDataObject($data['bcs']) : null;
+        $this->bcs = isset($data['bcs']) ? new RawDataPackage($data['bcs']) : null;
         $this->owner = isset($data['owner']) ? new ObjectOwner($data['owner']) : null;
         $this->content = isset($data['content']) ? new ObjectContent($data['content']) : null;
+    }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'digest' => $this->digest,
+            'version' => $this->version,
+            'objectId' => $this->objectId,
+            'type' => $this->type,
+            'display' => $this->display,
+            'storageRebate' => $this->storageRebate,
+            'previousTransaction' => $this->previousTransaction,
+            'bcs' => $this->bcs?->toArray() ?? null,
+            'owner' => $this->owner?->toArray() ?? null,
+            'content' => $this->content?->toArray() ?? null,
+        ];
     }
 }

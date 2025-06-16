@@ -56,7 +56,7 @@ abstract class BasePlugin
      */
     protected function setGasPrice(): void
     {
-        if (!isset($this->builder->gasData->price)) {
+        if (!$this->builder->gasData->price) {
             $this->builder->gasData->price = (string) $this->getClient()->getReferenceGasPrice();
         }
     }
@@ -66,36 +66,34 @@ abstract class BasePlugin
      */
     protected function setGasBudget(): void
     {
-        if (isset($this->builder->gasData->budget)) {
-            return;
-        }
-
-        $dryRunResult = $this->getClient()->dryRunTransactionBlock($this->builder->build([
-            'overrides' => [
-                'gasData' => [
-                    'budget' => self::MAX_GAS,
-                    'payment' => [],
+        if (!$this->builder->gasData->budget) {
+            $dryRunResult = $this->getClient()->dryRunTransactionBlock($this->builder->build([
+                'overrides' => [
+                    'gasData' => [
+                        'budget' => self::MAX_GAS,
+                        'payment' => [],
+                    ],
                 ],
-            ],
-        ]));
+            ]));
 
-        if ('success' !== $dryRunResult->effects->status->status) {
-            throw new \Exception(
-                "Dry run failed, could not automatically determine a budget: {$dryRunResult->effects->status->error}",
-            );
+            if ('success' !== $dryRunResult->effects->status->status) {
+                throw new \Exception(
+                    "Dry run failed, could not automatically determine a budget: {$dryRunResult->effects->status->error}", // phpcs:ignore
+                );
+            }
+
+            $safeOverhead = self::GAS_SAFE_OVERHEAD * (int) ($this->builder->gasData->price ?? 1);
+
+            $baseComputationCostWithOverhead =
+                (int) $dryRunResult->effects->gasUsed->computationCost + $safeOverhead;
+
+            $gasBudget =
+                $baseComputationCostWithOverhead +
+                (int) $dryRunResult->effects->gasUsed->storageCost -
+                (int) $dryRunResult->effects->gasUsed->storageRebate;
+
+            $this->builder->gasData->budget = (string) ($gasBudget > $baseComputationCostWithOverhead ? $gasBudget : $baseComputationCostWithOverhead); // phpcs:ignore
         }
-
-        $safeOverhead = self::GAS_SAFE_OVERHEAD * (int) ($this->builder->gasData->price ?? 1);
-
-        $baseComputationCostWithOverhead =
-            (int) $dryRunResult->effects->gasUsed->computationCost + $safeOverhead;
-
-        $gasBudget =
-            $baseComputationCostWithOverhead +
-            (int) $dryRunResult->effects->gasUsed->storageCost -
-            (int) $dryRunResult->effects->gasUsed->storageRebate;
-
-        $this->builder->gasData->budget = (string) ($gasBudget > $baseComputationCostWithOverhead ? $gasBudget : $baseComputationCostWithOverhead); // phpcs:ignore
     }
 
     /**
@@ -103,7 +101,7 @@ abstract class BasePlugin
      */
     protected function setGasPayment(): void
     {
-        if (!isset($this->builder->gasData->payment)) {
+        if (empty($this->builder->gasData->payment)) {
             $sender = $this->builder->gasData->owner ?? $this->builder->sender;
 
             if (null === $sender) {
@@ -179,42 +177,40 @@ abstract class BasePlugin
             }, $objectChunks)
         );
 
-        $responsesById = new Map(
-            array_map(
-                function (string $id, int $index) use ($resolved) {
-                    return [$id, $resolved[$index]];
-                },
-                $dedupedIds,
-                array_keys($dedupedIds)
-            ),
-        );
+        $resolved = array_map(function (SuiObjetData $object) {
+            return [
+                'data' => array_filter($object->toArray()),
+            ];
+        }, $resolved);
 
-        $invalidObjects = array_filter(array_map(function (mixed $obj) {
-            return !is_array($obj);
-        }, $responsesById->toArray()));
-
-        // @phpstan-ignore-next-line
-        if (count($invalidObjects)) {
-            throw new \Exception("The following input objects are invalid: " . implode(', ', $invalidObjects));
+        $responsesById = [];
+        foreach ($dedupedIds as $index => $id) {
+            $responsesById[$id] = $resolved[$index];
         }
 
-        $objects = array_map(function (SuiObjetData $object) {
-            $owner = $object->owner;
-            $initialSharedVersion = $owner && $owner->value;
+        $responsesById = new Map($responsesById);
+
+        $objects = array_map(function (array $object) {
+            $owner = $object['data']['owner'] ?? null;
+            $initialSharedVersion =
+                $owner && is_array($owner) && isset($owner['Shared'])
+                ? $owner['Shared']['initial_shared_version']
+                : null;
+
             return [
-                'objectId' => $object->objectId,
-                'digest' => $object->digest,
-                'version' => $object->version,
+                'objectId' => $object['data']['objectId'],
+                'digest' => $object['data']['digest'],
+                'version' => $object['data']['version'],
                 'initialSharedVersion' => $initialSharedVersion,
             ];
         }, $resolved);
 
-        /** @var Map<string, mixed> */
-        $objectsById = new Map(
-            array_map(function (mixed $index) use ($objects, $dedupedIds) {
-                return [$dedupedIds[$index], $objects[$index]];
-            }, array_keys($dedupedIds)),
-        );
+        $objectsById = [];
+        foreach ($dedupedIds as $index => $id) {
+            $objectsById[$id] = $objects[$index];
+        }
+
+        $objectsById = new Map($objectsById);
 
         foreach ($this->builder->inputs as $index => $input) {
             if ('UnresolvedObject' !== $input->kind) {
@@ -227,7 +223,11 @@ abstract class BasePlugin
             $id = Utils::normalizeSuiAddress($value->objectId);
             $object = $objectsById->get($id);
 
-            if ($value->initialSharedVersion || $object['initialSharedVersion']) {
+            if (null === $object) {
+                throw new \Exception("Object {$id} not found");
+            }
+
+            if ($value->initialSharedVersion || isset($object['initialSharedVersion'])) {
                 $updated = Inputs::SharedObjectRef(
                     $id,
                     $this->isUsedAsMutable($index),

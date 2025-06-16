@@ -28,4 +28,14 @@ class ObjectOwner
             }
         }
     }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            $this->type => $this->value,
+        ];
+    }
 }

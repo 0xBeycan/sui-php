@@ -18,4 +18,15 @@ class UpgradeInfo
         $this->upgradedId = $data['upgraded_id'];
         $this->upgradedVersion = $data['upgraded_version'];
     }
+
+    /**
+     * @return array<string,mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'upgraded_id' => $this->upgradedId,
+            'upgraded_version' => $this->upgradedVersion,
+        ];
+    }
 }
