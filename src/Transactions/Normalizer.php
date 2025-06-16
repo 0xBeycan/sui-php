@@ -87,7 +87,10 @@ class Normalizer
      */
     public static function argument(array $options): Argument
     {
-        return new Argument((string) array_keys($options)[0], $options);
+        $kind = self::getKind($options);
+        $value = $options[$kind];
+        $type = $options['type'] ?? null;
+        return new Argument((string) $kind, $value, $type);
     }
 
     /**
@@ -302,7 +305,7 @@ class Normalizer
      */
     private static function getKind(array $options): string
     {
-        return array_keys($options)[0];
+        return isset($options['$kind']) ? $options['$kind'] : array_keys($options)[0];
     }
 
     /**
@@ -433,7 +436,7 @@ class Normalizer
                 $callArg = self::unresolvedObject($callArg);
                 return new CallArg('UnresolvedObject', $callArg);
             default:
-                throw new \Exception('Invalid call arg');
+                throw new \Exception('Invalid call arg ' . $kind);
         }
     }
 

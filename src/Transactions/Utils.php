@@ -113,4 +113,35 @@ class Utils extends SuiUtils
         });
         return $result;
     }
+
+    /**
+     * @param array<mixed> $input
+     * @return array<mixed>
+     */
+    public static function transformKind(array $input): array
+    {
+        $output = [];
+        $kindValue = null;
+
+        foreach ($input as $key => $value) {
+            if (is_array($value)) {
+                $value = self::transformKind($value);
+            }
+
+            if ('kind' === $key) {
+                $kindValue = $value;
+                $output[$kindValue] = $input[$kindValue];
+            } elseif ('kind' === $key || 'value' === $key) {
+                continue;
+            } elseif (!is_null($value)) {
+                $output[$key] = $value;
+            }
+        }
+
+        if (!is_null($kindValue)) {
+            $output['$kind'] = $kindValue;
+        }
+
+        return $output;
+    }
 }

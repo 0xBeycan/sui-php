@@ -24,53 +24,69 @@ class ObjectFactory
     }
 
     /**
-     * @param string|CallArg|Argument $value
-     * @return Argument
+     * @param mixed $value
+     * @return \Closure|Argument
      */
-    private function makeObject(string|CallArg|Argument $value): Argument
+    private function makeObject(mixed $value): \Closure|Argument
     {
         return ($this->makeObject)($value);
     }
 
     /**
      * Create an object value
-     * @param string|CallArg|Argument $value The value to create
-     * @return Argument The object value
+     * @param mixed $value The value to create
+     * @return \Closure|Argument The object value
      */
-    public function object(string|CallArg|Argument $value): Argument
+    public function object(mixed $value): \Closure|Argument
     {
         return $this->makeObject($value);
     }
 
     /**
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function system(): Argument
+    public function system(): \Closure|Argument
     {
         return $this->object('0x5');
     }
 
     /**
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function clock(): Argument
+    public function clock(): \Closure|Argument
     {
         return $this->object('0x6');
     }
 
     /**
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function random(): Argument
+    public function random(): \Closure|Argument
     {
         return $this->object('0x8');
     }
 
     /**
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function denyList(): Argument
+    public function denyList(): \Closure|Argument
     {
         return $this->object('0x403');
+    }
+
+    /**
+     * @param string $type
+     * @param mixed $value
+     * @return \Closure
+     */
+    public function option(string $type, mixed $value): \Closure
+    {
+        return function (Transaction $transaction) use ($type, $value): Argument {
+            return $transaction->moveCall([
+                'typeArguments' => [$type],
+                'target' => sprintf('0x1::option::%s', null === $value ? 'none' : 'some'),
+                'arguments' => null === $value ? [] : [$transaction->object($value)],
+            ]);
+        };
     }
 }

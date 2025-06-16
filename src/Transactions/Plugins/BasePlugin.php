@@ -282,7 +282,7 @@ abstract class BasePlugin
                 }, $command->value->arguments);
 
                 $needsResolution = array_filter($inputs, function (CallArg|null $input) {
-                    return $input?->UnresolvedPure || $input?->UnresolvedObject; // phpcs:ignore
+                    return 'UnresolvedPure' === $input?->kind || 'UnresolvedObject' === $input?->kind; // phpcs:ignore
                 });
 
                 if (count($needsResolution) > 0) {

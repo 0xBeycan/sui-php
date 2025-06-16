@@ -28,9 +28,9 @@ class PureFactory
 
     /**
      * @param mixed $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function makePure(mixed $value): Argument
+    public function makePure(mixed $value): \Closure|Argument
     {
         return ($this->makePure)($value);
     }
@@ -39,12 +39,12 @@ class PureFactory
      * Create a pure value
      * @param string|Serialized|array<mixed> $typeOrSerializedValue The type or serialized value to create
      * @param mixed $value The value to create
-     * @return Argument The serialized value
+     * @return \Closure|Argument The serialized value
      */
     public function pure(
         string|Serialized|array $typeOrSerializedValue = null,
         mixed $value = null,
-    ): Argument {
+    ): \Closure|Argument {
         if (is_string($typeOrSerializedValue)) {
             return $this->makePure(Serializer::pureBcsSchemaFromTypeName($typeOrSerializedValue)->serialize($value));
         }
@@ -58,81 +58,81 @@ class PureFactory
 
     /**
      * @param int $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function u8(int $value): Argument
+    public function u8(int $value): \Closure|Argument
     {
         return $this->makePure(Bcs::u8()->serialize($value));
     }
 
     /**
      * @param int $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function u16(int $value): Argument
+    public function u16(int $value): \Closure|Argument
     {
         return $this->makePure(Bcs::u16()->serialize($value));
     }
 
     /**
      * @param int $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function u32(int $value): Argument
+    public function u32(int $value): \Closure|Argument
     {
         return $this->makePure(Bcs::u32()->serialize($value));
     }
 
     /**
      * @param int|string $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function u64(int|string $value): Argument
+    public function u64(int|string $value): \Closure|Argument
     {
         return $this->makePure(Bcs::u64()->serialize($value));
     }
 
     /**
      * @param int|string $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function u256(int|string $value): Argument
+    public function u256(int|string $value): \Closure|Argument
     {
         return $this->makePure(Bcs::u256()->serialize($value));
     }
 
     /**
      * @param bool $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function bool(bool $value): Argument
+    public function bool(bool $value): \Closure|Argument
     {
         return $this->makePure(Bcs::bool()->serialize($value));
     }
 
     /**
      * @param string $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function string(string $value): Argument
+    public function string(string $value): \Closure|Argument
     {
         return $this->makePure(Bcs::string()->serialize($value));
     }
 
     /**
      * @param string $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function address(string $value): Argument
+    public function address(string $value): \Closure|Argument
     {
         return $this->makePure(Map::address()->serialize($value));
     }
 
     /**
      * @param string $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function id(string $value): Argument
+    public function id(string $value): \Closure|Argument
     {
         return $this->address($value);
     }
@@ -140,9 +140,9 @@ class PureFactory
     /**
      * @param string $type
      * @param array<mixed> $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function vector(string $type, array $value): Argument
+    public function vector(string $type, array $value): \Closure|Argument
     {
         return $this->makePure(Bcs::vector(Serializer::pureBcsSchemaFromTypeName($type))->serialize($value));
     }
@@ -150,9 +150,9 @@ class PureFactory
     /**
      * @param string $type
      * @param mixed $value
-     * @return Argument
+     * @return \Closure|Argument
      */
-    public function option(string $type, mixed $value): Argument
+    public function option(string $type, mixed $value): \Closure|Argument
     {
         return $this->makePure(Bcs::option(Serializer::pureBcsSchemaFromTypeName($type))->serialize($value));
     }

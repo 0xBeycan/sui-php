@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sui\Transactions;
 
 use Sui\Bcs\Map;
+use Sui\Bcs\Serializer;
 use Sui\Transactions\Type\GasData;
 use Sui\Transactions\Type\Argument;
 use Sui\Transactions\Type\Command;
@@ -20,11 +21,11 @@ class TransactionDataBuilder extends TransactionData
     {
         parent::__construct(
             2,
-            $clone?->gasData ?? new GasData(),
-            $clone?->inputs ?? [],
-            $clone?->commands ?? [],
+            $clone?->gasData ? clone $clone->gasData : new GasData(),
+            $clone?->inputs ? array_map(fn($input) => clone $input, $clone->inputs) : [],
+            $clone?->commands ? array_map(fn($command) => clone $command, $clone->commands) : [],
             $clone?->sender ?? null,
-            $clone?->expiration ?? null,
+            $clone?->expiration ? clone $clone->expiration : null,
         );
     }
 
@@ -38,14 +39,16 @@ class TransactionDataBuilder extends TransactionData
         $overrides = $options['overrides'] ?? [];
         $onlyTransactionKind = $options['onlyTransactionKind'] ?? false;
 
-        // TODO validate that inputs and intents are actually resolved
-        $inputs = $this->inputs;
-        $commands = $this->commands;
+        $inputs = json_encode($this->inputs);
+        $commands = json_encode($this->commands);
+        if (false === $inputs || false === $commands) {
+            throw new \Exception('Failed to encode inputs or commands');
+        }
 
         $kind = [
             'ProgrammableTransaction' => [
-                'inputs' => $inputs,
-                'commands' => $commands,
+                'inputs' => Utils::transformKind(json_decode($inputs, true)),
+                'commands' => Utils::transformKind(json_decode($commands, true)),
             ],
         ];
 
@@ -53,7 +56,8 @@ class TransactionDataBuilder extends TransactionData
             return Map::transactionKind()->serialize($kind, ['maxSize' => $maxSizeBytes])->toArray();
         }
 
-        $expiration = $overrides['expiration'] ?? $this->expiration;
+        /** @var array<mixed>|null $expiration */
+        $expiration = $overrides['expiration'] ?? $this->expiration?->toArray() ?? null;
         $sender = $overrides['sender'] ?? $this->sender;
         $gasData = array_merge(
             $this->gasData->toArray(),
@@ -86,15 +90,13 @@ class TransactionDataBuilder extends TransactionData
                 'price' => (string)$gasData['price'],
                 'budget' => (string)$gasData['budget'],
             ],
-            'kind' => [
-                'ProgrammableTransaction' => [
-                    'inputs' => $inputs,
-                    'commands' => $commands,
-                ],
-            ],
+            'kind' => $kind,
         ];
 
-        return Map::transactionData()->serialize($transactionData, ['maxSize' => $maxSizeBytes])->toArray();
+        return Map::transactionData()->serialize(
+            ['V1' => $transactionData],
+            ['maxSize' => $maxSizeBytes]
+        )->toArray();
     }
 
 
@@ -333,8 +335,8 @@ class TransactionDataBuilder extends TransactionData
             throw new \Exception('Unable to deserialize from bytes.');
         }
 
-        $data = $rawData->V1; // @phpcs:ignore
-        $programmableTx = $data?->kind->ProgrammableTransaction;
+        $data = $rawData['V1'] ?? null;
+        $programmableTx = $data['kind']['ProgrammableTransaction'] ?? null;
 
         if (!$data || !$programmableTx) {
             throw new \Exception('Unable to deserialize from bytes.');
@@ -342,11 +344,11 @@ class TransactionDataBuilder extends TransactionData
 
         return self::restore([
             'version' => 2,
-            'sender' => $data->sender,
-            'expiration' => $data->expiration,
-            'gasData' => $data->gasData,
-            'inputs' => $programmableTx->inputs,
-            'commands' => $programmableTx->commands,
+            'sender' => $data['sender'],
+            'expiration' => $data['expiration'],
+            'gasData' => $data['gasData'],
+            'inputs' => $programmableTx['inputs'],
+            'commands' => $programmableTx['commands'],
         ]);
     }
 

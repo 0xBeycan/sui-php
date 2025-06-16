@@ -159,7 +159,7 @@ class Utils
         if (!$forceAdd0x && str_starts_with($address, '0x')) {
             $address = substr($address, 2);
         }
-        return '0x' . str_pad($address, Constants::SUI_ADDRESS_LENGTH * 2, '0');
+        return '0x' . str_pad($address, Constants::SUI_ADDRESS_LENGTH * 2, '0', STR_PAD_LEFT);
     }
 
     /**

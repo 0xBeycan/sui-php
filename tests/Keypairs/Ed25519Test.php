@@ -12,6 +12,8 @@ use Sui\Keypairs\Ed25519\Keypair;
 use Sui\Cryptography\Mnemonics;
 use Sui\Cryptography\Helpers;
 use Sui\Keypairs\Ed25519\PublicKey;
+use Sui\Transactions\Transaction;
+use Sui\Transactions\BuildTransactionOptions;
 
 class Ed25519Test extends TestCase
 {
@@ -463,13 +465,31 @@ class Ed25519Test extends TestCase
     }
 
     /**
-     * TODO: Implement signs Transactions test
      * @return void
      */
     public function testSignsTransactions(): void
     {
-        // TODO: Implement signs Transactions test
-        $this->markTestIncomplete('This test has not been implemented yet.');
+        $keypair = Keypair::generate();
+        $tx = new Transaction(new BuildTransactionOptions());
+        $tx->setSender($keypair->getPublicKey()->toSuiAddress());
+        $tx->setGasPrice(5);
+        $tx->setGasBudget(100);
+        $tx->setGasPayment([
+            [
+                'objectId' => str_pad(strval(mt_rand(0, 100000)), 64, '0'),
+                'version' => strval(mt_rand(0, 10000)),
+                'digest' => Utils::toBase58(json_decode('[
+                    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8,
+                    9, 1, 2
+                ]'))
+            ]
+        ]);
+
+        $bytes = $tx->build();
+        $serializedSignature = $keypair->signTransaction($bytes)['signature'];
+
+        $this->assertTrue($keypair->getPublicKey()->verifyTransaction($bytes, $serializedSignature));
+        $this->assertTrue(!!Verify::verifyTransactionSignature($bytes, $serializedSignature));
     }
 
     /**

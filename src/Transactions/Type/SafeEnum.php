@@ -32,7 +32,7 @@ abstract class SafeEnum
     public function toArray(): array
     {
         return [
-            'kind' => $this->kind,
+            '$kind' => $this->kind,
             $this->kind => $this->value instanceof SafeEnum ? $this->value->toArray() : $this->value
         ];
     }

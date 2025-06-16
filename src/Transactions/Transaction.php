@@ -63,12 +63,12 @@ class Transaction
     /**
      * @var PureFactory
      */
-    private PureFactory $pureFactory;
+    public PureFactory $pureFactory;
 
     /**
      * @var ObjectFactory
      */
-    private ObjectFactory $objectFactory;
+    public ObjectFactory $objectFactory;
 
     /**
      * @var BuildTransactionOptions
@@ -111,7 +111,7 @@ class Transaction
                 ],
             ]));
         });
-        $this->objectFactory = ObjectFactory::create(function (mixed $value): Argument {
+        $this->objectFactory = ObjectFactory::create(function (mixed $value): \Closure|Argument {
             if (is_callable($value)) {
                 return $this->object($this->add($value));
             }
@@ -125,6 +125,8 @@ class Transaction
             $insertedArray = array_filter($this->data->inputs, function (CallArg $input) use ($id) {
                 return $id === Utils::getIdFromCallArg($input);
             });
+
+            $insertedArray = array_values($insertedArray);
 
             if (count($insertedArray) > 0) {
                 /** @var CallArg $inserted */
@@ -279,12 +281,22 @@ class Transaction
     }
 
     /**
-     * @param array<ObjectRef> $payments
+     * @param array<ObjectRef|array<mixed>> $payments
      * @return void
      */
     public function setGasPayment(array $payments): void
     {
-        $this->data->gasData->payment = $payments;
+        $this->data->gasData->payment = array_map(function (array|ObjectRef $payment) {
+            if ($payment instanceof ObjectRef) {
+                return $payment->toArray();
+            }
+
+            return [
+                'objectId' => Utils::normalizeSuiAddress($payment['objectId']),
+                'version' => $payment['version'],
+                'digest' => $payment['digest'],
+            ];
+        }, $payments);
     }
 
     /**
@@ -334,15 +346,15 @@ class Transaction
      *
      * @param mixed $coin The coin to be split.
      * @param array<mixed> $amounts The amounts to split the coin into.
-     * @return Proxy
+     * @return Argument
      */
-    public function splitCoins(mixed $coin, array $amounts): Proxy
+    public function splitCoins(mixed $coin, array $amounts): Argument
     {
         $command = Commands::splitCoins(
-            is_string($coin) ? $this->object($coin) : $this->resolveArgument($coin),
+            is_string($coin) ? $this->resolveArgument($this->object($coin)) : $this->resolveArgument($coin),
             array_map(function (mixed $amount) {
                 if (is_numeric($amount) && is_int($amount)) {
-                    return $this->pureFactory->u64($amount);
+                    return $this->resolveArgument($this->pureFactory->u64($amount));
                 }
                 return $this->normalizeTransactionArgument($amount);
             }, $amounts),
@@ -350,7 +362,7 @@ class Transaction
 
         $this->addCommand($command);
 
-        return self::createTransactionResult(count($this->data->commands) - 1, count($amounts));
+        return self::createArgument(count($this->data->commands) - 1, count($amounts));
     }
 
     /**
@@ -364,9 +376,13 @@ class Transaction
     {
         return $this->add(
             Commands::mergeCoins(
-                is_string($destination) ? $this->object($destination) : $this->resolveArgument($destination),
+                is_string($destination)
+                    ? $this->resolveArgument($this->object($destination))
+                    : $this->resolveArgument($destination),
                 array_map(function (mixed $source) {
-                    return is_string($source) ? $this->object($source) : $this->resolveArgument($source);
+                    return is_string($source)
+                        ? $this->resolveArgument($this->object($source))
+                        : $this->resolveArgument($source);
                 }, $sources),
             ),
         );
@@ -398,7 +414,7 @@ class Transaction
     public function upgrade(array $modules, array $dependencies, string $packageId, mixed $ticket): mixed
     {
         return $this->add(
-            Commands::upgrade($modules, $dependencies, $packageId, $this->object($ticket)),
+            Commands::upgrade($modules, $dependencies, $packageId, $this->resolveArgument($this->object($ticket))),
         );
     }
 
@@ -426,10 +442,10 @@ class Transaction
         return $this->add(
             Commands::transferObjects(
                 array_map(function (mixed $obj) {
-                    return $this->object($obj);
+                    return $this->resolveArgument($this->object($obj));
                 }, $objects),
                 is_string($address)
-                    ? $this->pureFactory->address($address)
+                    ? $this->resolveArgument($this->pureFactory->address($address))
                     : $this->normalizeTransactionArgument($address),
             ),
         );
@@ -444,7 +460,7 @@ class Transaction
     {
         return $this->add(
             Commands::makeMoveVec(array_map(function (mixed $element) {
-                return $this->object($element);
+                return $this->resolveArgument($this->object($element));
             }, $elements), $type),
         );
     }
@@ -464,14 +480,14 @@ class Transaction
      */
     public function pure(string|Serialized|array $value): Argument
     {
-        return $this->pureFactory->pure($value);
+        return $this->resolveArgument($this->pureFactory->pure($value));
     }
 
     /**
-     * @param string|CallArg|Argument $value
-     * @return Argument
+     * @param mixed $value
+     * @return Argument|\Closure
      */
-    public function object(string|CallArg|Argument $value): Argument
+    public function object(mixed $value): Argument|\Closure
     {
         return $this->objectFactory->object($value);
     }
@@ -486,7 +502,7 @@ class Transaction
      */
     public function objectRef(string $objectId, string $digest, string $version): Argument
     {
-        return $this->object(Inputs::objectRef($objectId, $digest, $version));
+        return $this->resolveArgument($this->object(Inputs::objectRef($objectId, $digest, $version)));
     }
 
     /**
@@ -499,7 +515,9 @@ class Transaction
      */
     public function sharedObjectRef(string $objectId, bool $mutable, int|string $initialSharedVersion): Argument
     {
-        return $this->object(Inputs::sharedObjectRef($objectId, $mutable, $initialSharedVersion));
+        return $this->resolveArgument($this->object(
+            Inputs::sharedObjectRef($objectId, $mutable, $initialSharedVersion)
+        ));
     }
 
     /**
@@ -510,7 +528,7 @@ class Transaction
      */
     public function receivingRef(string $objectId, string $digest, string $version): Argument
     {
-        return $this->object(Inputs::receivingRef($objectId, $digest, $version));
+        return $this->resolveArgument($this->object(Inputs::receivingRef($objectId, $digest, $version)));
     }
 
     /**
@@ -551,7 +569,15 @@ class Transaction
     public function toJSON(): string|false
     {
         $this->prepareForSerialization();
-        return json_encode($this->data->snapshot());
+        $snapshot = json_encode($this->data->snapshot());
+        if (false === $snapshot) {
+            throw new \Exception('Failed to encode snapshot');
+        }
+
+        $array = json_decode($snapshot, true);
+        $array['inputs'] = Utils::transformKind($array['inputs']);
+        $array['commands'] = Utils::transformKind($array['commands']);
+        return json_encode($array);
     }
 
     /**
@@ -602,6 +628,41 @@ class Transaction
     }
 
     /**
+     * @param int $index
+     * @param array<Command> $unorderedCommands
+     * @param array<Command> $filteredCommands
+     * @return int
+     */
+    private function getOriginalIndex(int $index, array $unorderedCommands, array $filteredCommands): int
+    {
+        $command = $unorderedCommands[$index];
+        if (isset($command->{'$Intent'}->name) && 'AsyncTransactionThunk' === $command->{'$Intent'}->name) {
+            // @phpstan-ignore-next-line
+            $result = $command->{'$Intent'}->data->result;
+
+            if (null === $result) {
+                throw new \Exception('AsyncTransactionThunk has not been resolved');
+            }
+
+            return $this->getOriginalIndex($result->Result, $unorderedCommands, $filteredCommands); // @phpcs:ignore
+        }
+
+        // Find the command in filtered commands by comparing the command objects
+        $updated = -1;
+        foreach ($filteredCommands as $i => $filteredCommand) {
+            if ($command === $filteredCommand) {
+                $updated = $i;
+                break;
+            }
+        }
+
+        if (-1 === $updated) {
+            throw new \Exception('Unable to find original index for command');
+        }
+
+        return $updated;
+    }
+    /**
      * @return void
      */
     private function sortCommandsAndInputs(): void
@@ -621,7 +682,8 @@ class Transaction
         }
 
         $filteredCommands = array_filter($orderedCommands, function (Command $cmd) {
-            return 'AsyncTransactionThunk' !== $cmd->{'$Intent'}?->name;
+            $name = isset($cmd->{'$Intent'}->name) ? $cmd->{'$Intent'}->name : null;
+            return 'AsyncTransactionThunk' !== $name;
         });
 
         $this->data->commands = $filteredCommands;
@@ -629,53 +691,42 @@ class Transaction
         $this->commandSection = $filteredCommands;
         $this->inputSection = $orderedInputs;
 
-        $getOriginalIndex = function (int $index) use (
-            &$unorderedCommands,
-            &$filteredCommands,
-            &$getOriginalIndex
-        ): int {
-            $command = $unorderedCommands[$index];
-            if (isset($command->{'$Intent'}->name) && 'AsyncTransactionThunk' === $command->{'$Intent'}->name) {
-                // @phpstan-ignore-next-line
-                $result = $command->{'$Intent'}->data->result;
+        $this->data->mapArguments(
+            function (Argument $arg) use (
+                $orderedInputs,
+                $unorderedInputs,
+                $unorderedCommands,
+                $filteredCommands
+            ) {
+                if ('Input' === $arg->kind) {
+                    $orderedInputs = json_encode($orderedInputs);
+                    $unorderedInputs = json_encode($unorderedInputs);
+                    if (false === $orderedInputs || false === $unorderedInputs) {
+                        throw new \Exception('Failed to encode ordered inputs or unordered inputs');
+                    }
 
-                if (null === $result) {
-                    throw new \Exception('AsyncTransactionThunk has not been resolved');
+                    $orderedInputs = json_decode($orderedInputs, true);
+                    $unorderedInputs = json_decode($unorderedInputs, true);
+                    $updated = array_search($unorderedInputs[$arg->getValue()], $orderedInputs);
+
+                    if (-1 === $updated) {
+                        throw new \Exception('Input has not been resolved');
+                    }
+
+                    return new Argument('Input', $updated, $arg->type);
+                } elseif ('Result' === $arg->kind) {
+                    $updated = $this->getOriginalIndex($arg->value, $unorderedCommands, $filteredCommands);
+
+                    return new Argument('Result', $updated, $arg->type);
+                } elseif ('NestedResult' === $arg->kind) {
+                    $updated = $this->getOriginalIndex($arg->value[0], $unorderedCommands, $filteredCommands);
+
+                    return new Argument('NestedResult', [$updated, $arg->value[1]], $arg->type);
                 }
 
-                return $getOriginalIndex($result->Result); // @phpcs:ignore
+                return $arg;
             }
-
-            $updated = array_search($command, $filteredCommands);
-
-            if (-1 === $updated) {
-                throw new \Exception('Unable to find original index for command');
-            }
-
-            return (int) $updated;
-        };
-
-        $this->data->mapArguments(function (Argument $arg) use (&$orderedInputs, &$getOriginalIndex) {
-            if ('Input' === $arg->kind) {
-                $updated = array_search($arg->value, $orderedInputs);
-
-                if (-1 === $updated) {
-                    throw new \Exception('Input has not been resolved');
-                }
-
-                return new Argument('Input', $updated, $arg->type);
-            } elseif ('Result' === $arg->kind) {
-                $updated = $getOriginalIndex($arg->value);
-
-                return new Argument('Result', $updated, $arg->type);
-            } elseif ('NestedResult' === $arg->kind) {
-                $updated = $getOriginalIndex($arg->value[0]);
-
-                return new Argument('NestedResult', [$updated, $arg->value[1]], $arg->type);
-            }
-
-            return $arg;
-        });
+        );
     }
 
     /**
@@ -794,7 +845,7 @@ class Transaction
                 $placeholder->value->data->result = $result;
             });
 
-            $txResult = self::createTransactionResult(count($this->data->commands) - 1);
+            $txResult = self::createArgument(count($this->data->commands) - 1);
             $this->added->attach($value, $txResult);
             return $txResult;
         } elseif ($value instanceof Command) {
@@ -803,7 +854,7 @@ class Transaction
             $this->addCommand(Normalizer::command($value));
         }
 
-        return self::createTransactionResult(count($this->data->commands) - 1);
+        return self::createArgument(count($this->data->commands) - 1);
     }
 
     /**
@@ -855,15 +906,6 @@ class Transaction
     }
 
     /**
-     * @param mixed $value
-     * @return bool
-     */
-    public static function isTransactionResult(mixed $value): bool
-    {
-        return $value instanceof Proxy;
-    }
-
-    /**
      * Converts from a serialize transaction kind (built with `build({ onlyTransactionKind: true })`)
      * to a `Transaction` class.
      * Supports either a byte array, or base64-encoded bytes.
@@ -901,12 +943,12 @@ class Transaction
         if (self::isTransaction($transaction)) {
             /** @var Transaction $transaction */
             $newTransaction->data = new TransactionDataBuilder($transaction->getData());
-        } elseif (is_array($transaction)) {
-            $newTransaction->data = TransactionDataBuilder::restore($transaction);
+        } elseif (is_array($transaction) || (is_string($transaction) && !str_starts_with($transaction, '{'))) {
+            $newTransaction->data = TransactionDataBuilder::fromBytes(
+                is_string($transaction) ? Utils::fromBase64($transaction) : $transaction,
+            );
         } elseif (is_string($transaction) && str_starts_with($transaction, '{')) {
-            $newTransaction->data = TransactionDataBuilder::restore(json_decode($transaction));
-        } elseif (is_string($transaction) && !str_starts_with($transaction, '{')) {
-            $newTransaction->data = TransactionDataBuilder::fromBytes(Utils::fromBase64($transaction));
+            $newTransaction->data = TransactionDataBuilder::restore(json_decode($transaction, true));
         } else {
             throw new \InvalidArgumentException('Invalid transaction');
         }
@@ -959,12 +1001,12 @@ class Transaction
     /**
      * @param int $index
      * @param int $length
-     * @return Proxy
+     * @return Argument
      */
-    public static function createTransactionResult(int $index, int $length = PHP_INT_MAX): Proxy
+    public static function createArgument(int $index, int $length = PHP_INT_MAX): Argument
     {
         $baseResult = (object) [
-            '$kind' => 'Result',
+            'kind' => 'Result',
             'Result' => $index,
         ];
 
@@ -973,95 +1015,46 @@ class Transaction
         $nestedResultFor = function (int $resultIndex) use ($index, &$nestedResults): object {
             if (!isset($nestedResults[$resultIndex])) {
                 $nestedResults[$resultIndex] = (object) [
-                    '$kind' => 'NestedResult',
+                    'kind' => 'NestedResult',
                     'NestedResult' => [$index, $resultIndex],
                 ];
             }
             return $nestedResults[$resultIndex];
         };
 
-        return new Proxy($baseResult, new class($nestedResultFor, $length) { // @phpcs:ignore
-            /**
-             * @var \Closure
-             */
-            private \Closure $nestedResultFor;
-
-            /**
-             * @var int
-             */
-            private int $length;
-
-            /**
-             * @param \Closure $nestedResultFor
-             * @param int $length
-             */
-            public function __construct(\Closure $nestedResultFor, int $length)
-            {
-                $this->nestedResultFor = $nestedResultFor;
-                $this->length = $length;
+        // phpcs:ignore
+        return new Argument($baseResult->kind, $baseResult->Result, null, function ($target, $property) use ($length, $nestedResultFor) {
+            // This allows this transaction argument to be used in the singular form:
+            if (property_exists($target, $property)) {
+                return $target->$property;
             }
 
-            /**
-             * @param int $resultIndex
-             * @return object
-             */
-            private function nestedResultFor(int $resultIndex): object
-            {
-                return ($this->nestedResultFor)($resultIndex);
-            }
-
-            /**
-             * @param object $target
-             * @param string $property
-             * @param mixed $value
-             * @return void
-             */
-            public function set(object $target, string $property, mixed $value): void
-            {
-                throw new \Exception(
-                    'The transaction result is a proxy, and does not support setting properties directly',
-                );
-            }
-
-            /**
-             * @param object $target
-             * @param string $property
-             * @return mixed
-             */
-            public function get(object $target, string $property): mixed
-            {
-                // This allows this transaction argument to be used in the singular form:
-                if (property_exists($target, $property)) {
-                    return Proxy::reflectGet($target, $property);
-                }
-
-                // Check if the property is __iterator__ for iteration support
-                if ('__iterator__' === $property) {
-                    return function () {
-                        $i = 0;
-                        while ($i < $this->length) {
-                            yield $this->nestedResultFor($i);
-                            $i++;
-                        }
-                    };
-                }
-
-                // Handle symbol-like properties
-                if (Proxy::isSymbol($property)) {
-                    return null;
-                }
-
-                // Check for numeric property
-                if (is_numeric($property)) {
-                    $resultIndex = (int)$property;
-                    if ($resultIndex < 0 || $resultIndex >= $this->length) {
-                        return null;
+            // Check if the property is __iterator__ for iteration support
+            if ('__iterator__' === $property) {
+                return function () use ($length, $nestedResultFor) {
+                    $i = 0;
+                    while ($i < $length) {
+                        yield $nestedResultFor($i);
+                        $i++;
                     }
-                    return $this->nestedResultFor($resultIndex);
-                }
+                };
+            }
 
+            // Handle symbol-like properties
+            if (is_string($property) && str_starts_with($property, '$')) {
                 return null;
             }
+
+            // Check for numeric property
+            if (is_numeric($property)) {
+                $resultIndex = (int)$property;
+                if ($resultIndex < 0 || $resultIndex >= $length) {
+                    return null;
+                }
+                return $nestedResultFor($resultIndex);
+            }
+
+            return null;
         });
     }
 }

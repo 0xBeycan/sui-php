@@ -55,7 +55,7 @@ class NormalizerTest extends TestCase
         $this->assertIsString($normalized);
         $this->assertEquals(
             $normalized,
-            '0x2000000000000000000000000000000000000000000000000000000000000000'
+            '0x0000000000000000000000000000000000000000000000000000000000000002'
         );
     }
 
