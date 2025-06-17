@@ -8,7 +8,10 @@ class SuiArgument
 {
     public string|int|null $key;
 
-    public string|float $value;
+    /**
+     * @var string|float|array<mixed>
+     */
+    public string|float|array $value;
 
     /**
      * @param array<mixed>|string $data
